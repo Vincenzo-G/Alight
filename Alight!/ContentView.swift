@@ -4,7 +4,6 @@
 //
 //  Created by Vincenzo Gerelli on 12/03/25.
 //
-
 import SwiftUI
 
 // Estensione per creare un Color da una stringa esadecimale
@@ -34,26 +33,64 @@ extension Color {
     }
 }
 
+// View che crea l'effetto gradient overlay, passando dal bianco al colore della forma
+struct GradientOverlay: View {
+    let shapeSymbol: String
+    let baseColor: Color
+    let pulse: Bool
+    
+    var body: some View {
+        Image(systemName: shapeSymbol)
+            .resizable()
+            .aspectRatio(contentMode: .fit)
+            .foregroundStyle(
+                LinearGradient(
+                    gradient: Gradient(colors: [Color.white, baseColor]),
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+            .scaleEffect(pulse ? 1.1 : 1.0)
+            .opacity(0.5)
+    }
+}
+
 struct ContentView: View {
+    
+    @StateObject private var homeManager = HomeManager()
+    @AppStorage("isOnboardingShowing") private var isOnboardingShowing = true
+    
     @Environment(\.colorScheme) var colorScheme
-    // Stato che controlla la forma e il colore visualizzati al centro
-    // Stato idle: "circle" (cerchio con stroke) e colore idle impostato a BDBDBD per il contorno
+    // Stato per la forma centrale.
+    // Idle: "circle" (cerchio con stroke)
     @State private var selectedShape: String = "circle"
     @State private var selectedColor: Color = .white
+    // Identifica il pulsante attivo (basato sul titolo)
+    @State private var activeButton: String? = nil
+    @State private var isOptionsShowing = false  // Per il menu opzioni
+    
+    // Funzione per attivare l'haptic feedback
+    func triggerHapticFeedback() {
+        UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
+    }
     
     var body: some View {
         ZStack(alignment: .topTrailing) {
+            // Background dinamico
+            Color(colorScheme == .light ? Color(hex: "E5E5EA") : Color(hex: "1C1C1E"))
+                .ignoresSafeArea()
+            
             VStack {
                 Spacer()
                 
-                // Vista centrale: forma grande con animazione pulsante se non in idle
+                // Vista centrale: se lo stato è idle non c'è animazione,
+                // altrimenti l'animazione pulsante parte ogni volta che la forma cambia.
                 PulsingShapeView(shapeSymbol: selectedShape, color: selectedColor)
                     .frame(width: 300, height: 300)
                 
                 Spacer()
                 
                 // Griglia con 4 pulsanti
-                
                 LazyVGrid(columns: [GridItem(.flexible()),
                                      GridItem(.flexible())],
                           spacing: 10) {
@@ -61,62 +98,119 @@ struct ContentView: View {
                     AnimationButton(title: "Doorbell",
                                     primaryIcon: "bell.fill",
                                     shapeIcon: "circle.fill",
-                                    color: Color(hex: "E89D00")) {
-                        selectedShape = "circle.fill"
-                        selectedColor = Color(hex: "E89D00")
+                                    color: Color(hex: "E89D00"),
+                                    isActive: activeButton == "Doorbell",
+                                    anyButtonActive: activeButton != nil) {
+                        guard activeButton == nil else { return }
+                        triggerHapticFeedback()
+                        triggerHapticFeedback()
+                        withAnimation(.easeInOut(duration: 0.5)) {
+                            activeButton = "Doorbell"
+                            selectedShape = "circle.fill"
+                            selectedColor = Color(hex: "E89D00")
+                        }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 20) {
+                            withAnimation(.easeInOut(duration: 0.5)) {
+                                selectedShape = "circle"
+                                activeButton = nil
+                            }
+                        }
                     }
                     
                     AnimationButton(title: "Meal",
                                     primaryIcon: "fork.knife",
                                     shapeIcon: "square.fill",
-                                    color: Color(hex: "24709F")) {
-                        selectedShape = "square.fill"
-                        selectedColor = Color(hex: "24709F")
+                                    color: Color(hex: "24709F"),
+                                    isActive: activeButton == "Meal",
+                                    anyButtonActive: activeButton != nil) {
+                        guard activeButton == nil else { return }
+                        triggerHapticFeedback()
+                        triggerHapticFeedback()
+                        withAnimation(.easeInOut(duration: 0.5)) {
+                            activeButton = "Meal"
+                            selectedShape = "square.fill"
+                            selectedColor = Color(hex: "24709F")
+                        }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 20) {
+                            withAnimation(.easeInOut(duration: 0.5)) {
+                                selectedShape = "circle"
+                                activeButton = nil
+                            }
+                        }
                     }
                     
                     AnimationButton(title: "Alert",
                                     primaryIcon: "light.beacon.max.fill",
                                     shapeIcon: "triangle.fill",
-                                    color: Color(hex: "B23837")) {
-                        selectedShape = "triangle.fill"
-                        selectedColor = Color(hex: "B23837")
+                                    color: Color(hex: "B23837"),
+                                    isActive: activeButton == "Alert",
+                                    anyButtonActive: activeButton != nil) {
+                        guard activeButton == nil else { return }
+                        triggerHapticFeedback()
+                        triggerHapticFeedback()
+                        withAnimation(.easeInOut(duration: 0.5)) {
+                            activeButton = "Alert"
+                            selectedShape = "triangle.fill"
+                            selectedColor = Color(hex: "B23837")
+                        }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 20) {
+                            withAnimation(.easeInOut(duration: 0.5)) {
+                                selectedShape = "circle"
+                                activeButton = nil
+                            }
+                        }
                     }
                     
-                    AnimationButton(title: "Approaching",
+                    AnimationButton(title: "Approach",
                                     primaryIcon: "figure.walk",
                                     shapeIcon: "pentagon.fill",
-                                    color: Color(hex: "237F52")) {
-                        selectedShape = "pentagon.fill"
-                        selectedColor = Color(hex: "237F52")
+                                    color: Color(hex: "237F52"),
+                                    isActive: activeButton == "Approach",
+                                    anyButtonActive: activeButton != nil) {
+                        guard activeButton == nil else { return }
+                        triggerHapticFeedback()
+                        triggerHapticFeedback()
+                        withAnimation(.easeInOut(duration: 0.5)) {
+                            activeButton = "Approach"
+                            selectedShape = "pentagon.fill"
+                            selectedColor = Color(hex: "237F52")
+                        }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 20) {
+                            withAnimation(.easeInOut(duration: 0.5)) {
+                                selectedShape = "circle"
+                                activeButton = nil
+                            }
+                        }
                     }
-                    
                 }
                 .padding()
                 
-                Spacer()
             }
             .padding(.top, 40)
             
-            // Bottone per i settings con colore dinamico
+            // Bottone settings, sempre abilitato
             Button(action: {
-                // Azione per aprire i settings
+                isOptionsShowing = true
             }) {
                 Image(systemName: "ellipsis")
-                    .padding(50)
-                    .font(.largeTitle)
                     .foregroundColor(colorScheme == .dark ? .white : .black)
+                    .padding(30)
+                    .font(.largeTitle)
             }
+            .sheet(isPresented: $isOptionsShowing) {
+                OptionsView()
+                
+            }
+            .sheet(isPresented: $isOnboardingShowing) {
+                OnboardingView(isOnboardingShowing: $isOnboardingShowing)
+            }
+
             
         }
-        
-       
-        // Background dinamico: in light mode usa E5E5EA, altrimenti 1C1C1E
-        .background(colorScheme == .light ? Color(hex: "E5E5EA") : Color(hex: "1C1C1E"))
-        .ignoresSafeArea()
     }
 }
 
-// Vista che mostra la forma al centro
+// Vista per la forma centrale
 struct PulsingShapeView: View {
     let shapeSymbol: String
     let color: Color
@@ -125,30 +219,56 @@ struct PulsingShapeView: View {
     var body: some View {
         Group {
             if shapeSymbol == "circle" {
-                // Stato idle: disegna un cerchio con stroke di 10 e colore BDBDBD
+                // Stato idle: cerchio statico con stroke di 10, senza animazione
                 Circle()
                     .stroke(Color(hex: "BDBDBD"), lineWidth: 10)
                     .aspectRatio(contentMode: .fit)
             } else {
-                // Stato animato: la forma pulsa e assume il colore specificato
+                // Stato animato: l'immagine pulsa, con overlay di pulse e overlay gradient
                 Image(systemName: shapeSymbol)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .foregroundColor(color)
-                    .scaleEffect(pulse ? 1.2 : 1.0)
-                    .animation(Animation.easeInOut(duration: 1.0).repeatForever(autoreverses: true), value: pulse)
-                    .onAppear {
-                        pulse = true
-                    }
+                    .scaleEffect(pulse ? 1.1 : 1.0)
+                    .shadow(color: color.opacity(pulse ? 0.9 : 0.3), radius: pulse ? 20 : 10)
+                    .overlay(PulseAnimationOverlay(shapeSymbol: shapeSymbol, color: color))
+                    .overlay(GradientOverlay(shapeSymbol: shapeSymbol, baseColor: color, pulse: pulse))
+                    .onAppear { startAnimation() }
             }
+        }
+    }
+    
+    private func startAnimation() {
+        pulse = false
+        withAnimation(Animation.easeInOut(duration: 1.0).repeatForever(autoreverses: true)) {
+            pulse = true
         }
     }
 }
 
-// Componente per ciascun pulsante con layout personalizzato:
-// - Icona in alto a sinistra
-// - Testo in basso a sinistra
-// - Icona della forma in basso a destra
+// View che crea l'effetto pulse overlay, utilizzando lo stesso SF Symbol e colore
+struct PulseAnimationOverlay: View {
+    let shapeSymbol: String
+    let color: Color
+    @State private var enablePulse = false
+
+    var body: some View {
+        Image(systemName: shapeSymbol)
+            .resizable()
+            .aspectRatio(contentMode: .fit)
+            .foregroundColor(color)
+            .opacity(enablePulse ? 0 : 0.3)
+            .scaleEffect(enablePulse ? 3 : 1)
+            .blur(radius: enablePulse ? 2 : 0)
+            .onAppear {
+                withAnimation(.linear(duration: 3).repeatForever(autoreverses: false)) {
+                    enablePulse = true
+                }
+            }
+    }
+}
+
+// Componente per ciascun pulsante
 struct AnimationButton: View {
     @Environment(\.colorScheme) var colorScheme
     
@@ -156,21 +276,22 @@ struct AnimationButton: View {
     let primaryIcon: String
     let shapeIcon: String
     let color: Color
+    let isActive: Bool
+    let anyButtonActive: Bool
     let action: () -> Void
     
-    // Colore dinamico per testo e icona principale
     var dynamicTextColor: Color {
-        colorScheme == .dark ? .white : .black
+        isActive ? .white : (colorScheme == .dark ? .white : .black)
     }
     
-    // Background dinamico per il tasto: in light mode usa FFFFFF, altrimenti systemGray4
     var dynamicButtonBackground: Color {
-        colorScheme == .light ? Color(hex: "FFFFFF") : Color(UIColor.systemGray4)
+        isActive ? color : (colorScheme == .light ? Color(hex: "FFFFFF") : Color(UIColor.systemGray4))
     }
     
     var body: some View {
         Button(action: action) {
             VStack {
+                // Icona in alto a sinistra
                 HStack {
                     Image(systemName: primaryIcon)
                         .font(.largeTitle)
@@ -178,7 +299,10 @@ struct AnimationButton: View {
                     Spacer()
                 }
                 .padding(.top, 10)
+                
                 Spacer()
+                
+                // Testo in basso a sinistra e icona della forma in basso a destra
                 HStack {
                     Text(title)
                         .font(.headline)
@@ -194,8 +318,10 @@ struct AnimationButton: View {
             .background(dynamicButtonBackground)
             .cornerRadius(20)
         }
+        .disabled(anyButtonActive && !isActive)
     }
 }
+
 
 #Preview {
     ContentView()

@@ -11,7 +11,7 @@ import SwiftUI
 struct Alight_App: App {
     var body: some Scene {
         WindowGroup {
-            ButtonView()
+            ContentView()
         }
     }
 }
