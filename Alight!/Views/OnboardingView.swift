@@ -17,13 +17,13 @@ struct OnboardingView: View {
     var body: some View {
         VStack {
             TabView(selection: $currentIndex) {  // ✅ Track current index
-                OnboardingPageView(systemImageName: "globe", title: "Welcome", description: "Welcome to the app", color: .blue)
+                OnboardingPageView(systemImageName: "circle", title: "Colors speak for you", description: "Send color-coded signals for those with hearing impairments.", color: .white)
                     .tag(0)
                 
-                OnboardingPageView(systemImageName: "lightbulb.max", title: "Select the lights", description: "Select the lights for each button", color: .blue)
+                OnboardingPageView(systemImageName: "homekit", title: "Setup Homekit", description: "Add your light on HomeKit. It will be automatically discovered and configured.", color: .white)
                     .tag(1)
                 
-                OnboardingPageView(systemImageName: "square", title: "Quadrato", description: "Queste sono le informazioni", color: .blue)
+                OnboardingPageView(systemImageName: "ellipsis", title: "Setup your buttons", description: "Select which light you want to use for each button.", color: .white)
                     .tag(2)
             }
             .tabViewStyle(.page(indexDisplayMode: isKeyboardVisible ? .never : .always))  // ✅ Hide when keyboard appears
