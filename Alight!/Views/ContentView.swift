@@ -61,39 +61,24 @@ struct ContentView: View {
     @AppStorage("isOnboardingShowing") private var isOnboardingShowing = true
     
     @Environment(\.colorScheme) var colorScheme
-    // Stato per la forma centrale.
-    // Idle: "circle" (cerchio con stroke)
     @State private var selectedShape: String = "circle"
     @State private var selectedColor: Color = .white
-    // Identifica il pulsante attivo (basato sul titolo)
     @State private var activeButton: String? = nil
-    @State private var isOptionsShowing = false  // Per il menu opzioni
-    
-    // Funzione per attivare l'haptic feedback
-    func triggerHapticFeedback() {
-        UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
-    }
     
     var body: some View {
         ZStack(alignment: .topTrailing) {
-            // Background dinamico
             Color(colorScheme == .light ? Color(hex: "E5E5EA") : Color(hex: "1C1C1E"))
                 .ignoresSafeArea()
             
             VStack {
                 Spacer()
                 
-                // Vista centrale: se lo stato è idle non c'è animazione,
-                // altrimenti l'animazione pulsante parte ogni volta che la forma cambia.
                 PulsingShapeView(shapeSymbol: selectedShape, color: selectedColor)
                     .frame(width: 300, height: 300)
                 
                 Spacer()
                 
-                // Griglia con 4 pulsanti
-                LazyVGrid(columns: [GridItem(.flexible()),
-                                    GridItem(.flexible())],
-                          spacing: 10) {
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
                     
                     AnimationButton(buttonID: "Button 1",
                                     primaryIcon: "bell.fill",
@@ -102,8 +87,6 @@ struct ContentView: View {
                                     isActive: activeButton == "Doorbell",
                                     anyButtonActive: activeButton != nil) {
                         guard activeButton == nil else { return }
-                        triggerHapticFeedback()
-                        triggerHapticFeedback()
                         homeManager.flashLights(button: "Button 1", cycles: 3, colorHue: 40)
                         withAnimation(.easeInOut(duration: 0.5)) {
                             activeButton = "Doorbell"
@@ -125,8 +108,6 @@ struct ContentView: View {
                                     isActive: activeButton == "Meal",
                                     anyButtonActive: activeButton != nil) {
                         guard activeButton == nil else { return }
-                        triggerHapticFeedback()
-                        triggerHapticFeedback()
                         homeManager.flashLights(button: "Button 2", cycles: 3, colorHue: 240)
                         withAnimation(.easeInOut(duration: 0.5)) {
                             activeButton = "Meal"
@@ -148,8 +129,6 @@ struct ContentView: View {
                                     isActive: activeButton == "Alert",
                                     anyButtonActive: activeButton != nil) {
                         guard activeButton == nil else { return }
-                        triggerHapticFeedback()
-                        triggerHapticFeedback()
                         homeManager.flashLights(button: "Button 3", cycles: 3, colorHue: 0)
                         withAnimation(.easeInOut(duration: 0.5)) {
                             activeButton = "Alert"
@@ -171,8 +150,6 @@ struct ContentView: View {
                                     isActive: activeButton == "Approach",
                                     anyButtonActive: activeButton != nil) {
                         guard activeButton == nil else { return }
-                        triggerHapticFeedback()
-                        triggerHapticFeedback()
                         homeManager.flashLights(button: "Button 4", cycles: 3, colorHue: 120)
                         withAnimation(.easeInOut(duration: 0.5)) {
                             activeButton = "Approach"
@@ -187,15 +164,12 @@ struct ContentView: View {
                         }
                     }
                 }
-                          .padding()
-                
+                .padding()
             }
             .padding(.top, 40)
             .sheet(isPresented: $isOnboardingShowing) {
                 OnboardingView(isOnboardingShowing: $isOnboardingShowing)
             }
-            
-            
         }
     }
 }
@@ -259,11 +233,10 @@ struct PulseAnimationOverlay: View {
 }
 
 // Componente per ciascun pulsante
-
 struct AnimationButton: View {
     @Environment(\.colorScheme) var colorScheme
     
-    let buttonID: String  // Unique ID to fetch and save the button name
+    let buttonID: String
     let primaryIcon: String
     let shapeIcon: String
     let color: Color
@@ -271,8 +244,16 @@ struct AnimationButton: View {
     let anyButtonActive: Bool
     let action: () -> Void
     
-    @State private var isOptionsShowing = false  // State for OptionsView
-    @State private var buttonName: String // Persistent button name
+    @State private var isOptionsShowing = false
+    @State private var buttonName: String
+
+    // ✅ Default names for each button
+    private let defaultNames: [String: String] = [
+        "Button 1": "Doorbell",
+        "Button 2": "Meal",
+        "Button 3": "Alert",
+        "Button 4": "Approach"
+    ]
     
     init(buttonID: String, primaryIcon: String, shapeIcon: String, color: Color, isActive: Bool, anyButtonActive: Bool, action: @escaping () -> Void) {
         self.buttonID = buttonID
@@ -283,8 +264,10 @@ struct AnimationButton: View {
         self.anyButtonActive = anyButtonActive
         self.action = action
         
-        // Load stored name or use default
-        let storedName = UserDefaults.standard.string(forKey: "buttonName_\(buttonID)") ?? buttonID
+        // ✅ Check UserDefaults or use default name
+        let storedName = UserDefaults.standard.string(forKey: "buttonName_\(buttonID)")
+            ?? defaultNames[buttonID]
+            ?? buttonID  // Fallback if no default exists
         _buttonName = State(initialValue: storedName)
     }
     
@@ -313,7 +296,7 @@ struct AnimationButton: View {
                             .font(.title2)
                             .foregroundColor(dynamicTextColor.opacity(0.7))
                     }
-                    .disabled(anyButtonActive && !isActive)  // Disable if other button is active
+                    .disabled(anyButtonActive && !isActive)
                 }
                 .padding(.top, 10)
                 
@@ -321,7 +304,7 @@ struct AnimationButton: View {
                 
                 // **Bottom Section: Title + Shape Icon**
                 HStack {
-                    Text(buttonName)  // Uses persistent button name
+                    Text(buttonName)
                         .font(.headline)
                         .foregroundColor(dynamicTextColor)
                     Spacer()
@@ -335,12 +318,16 @@ struct AnimationButton: View {
             .background(dynamicButtonBackground)
             .cornerRadius(20)
         }
-        .disabled(anyButtonActive && !isActive)  // Disable button when needed
+        .disabled(anyButtonActive && !isActive)
         .sheet(isPresented: $isOptionsShowing, onDismiss: {
-            // ✅ Reload the button name when OptionsView closes
-            buttonName = UserDefaults.standard.string(forKey: "buttonName_\(buttonID)") ?? buttonID
+            // ✅ Refresh button name after closing OptionsView
+            buttonName = UserDefaults.standard.string(forKey: "buttonName_\(buttonID)")
+                ?? defaultNames[buttonID]
+                ?? buttonID
         }) {
-            OptionsView(buttonID: buttonID)  // Pass only buttonID
+            NavigationView {
+                OptionsView(buttonID: buttonID)
+            }
         }
     }
 }
