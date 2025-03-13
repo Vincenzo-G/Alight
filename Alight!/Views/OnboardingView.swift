@@ -16,10 +16,10 @@ struct OnboardingView: View {
         TabView(){
             OnboardingPageView(systemImageName: "globe", title: "Welcome", description: "Welcome to the app", color: .blue)
             OnboardingPageView(systemImageName: "lightbulb.max", title: "Select the lights", description: "Select the lights for each button (you can modify them later if you desire to)", color: .blue)
-            OnboardingSelectLightsView(button: "Button 1")
-            OnboardingSelectLightsView(button: "Button 2")
-            OnboardingSelectLightsView(button: "Button 3")
-            OnboardingSelectLightsView(button: "Button 4")
+            OnboardingOptionsView(button: "Button 1")
+            OnboardingOptionsView(button: "Button 2")
+            OnboardingOptionsView(button: "Button 3")
+            OnboardingOptionsView(button: "Button 4")
             OnboardingPageView(systemImageName: "square", title: "Quadrato", description: "Queste sono le informazioni", color: .blue)
         }
         .tabViewStyle(.page(indexDisplayMode: .always))
@@ -66,17 +66,17 @@ struct OnboardingPageView: View {
     }
 }
 
-struct OnboardingSelectLightsView: View {
-    let button: String 
+struct OnboardingOptionsView: View {
+    let button: String
     
     var body: some View {
         VStack {
-            Text("Select lights for \(button)")
+            Text("Customize \(button)")
                 .font(.title)
                 .fontWeight(.bold)
                 .padding()
             
-            SelectLightsView(button: button)
+            OptionsView(buttonID: button)
             
         }
     }

@@ -1,4 +1,4 @@
-import SwiftUI
+/*import SwiftUI
 
 struct ButtonView: View {
     
@@ -86,7 +86,7 @@ struct ButtonView: View {
                 }
             }
             .sheet(isPresented: $isOptionsShowing) {
-                OptionsView()
+                //OptionsView()
             }
             .sheet(isPresented: $isOnboardingShowing) {
                 OnboardingView(isOnboardingShowing: $isOnboardingShowing)
@@ -97,4 +97,4 @@ struct ButtonView: View {
 
 #Preview {
     ButtonView()
-}
+}*/

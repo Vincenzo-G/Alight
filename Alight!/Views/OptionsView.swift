@@ -1,36 +1,54 @@
 import SwiftUI
 
 struct OptionsView: View {
+    let buttonID: String  // Unique button identifier
     @AppStorage("isOnboardingShowing") private var isOnboardingShowing = false
     @Environment(\.dismiss) private var dismiss
-
+    
+    @State private var buttonName: String  // Local state for text field
+    
+    init(buttonID: String) {
+        self.buttonID = buttonID
+        // Load stored name or default to buttonID
+        _buttonName = State(initialValue: UserDefaults.standard.string(forKey: "buttonName_\(buttonID)") ?? buttonID)
+    }
+    
     var body: some View {
-        NavigationView {
             List {
-                Section(header: Text("Select lights")) {
-                    NavigationLink("Button 1", destination: SelectLightsView(button: "Button 1"))
-                    NavigationLink("Button 2", destination: SelectLightsView(button: "Button 2"))
-                    NavigationLink("Button 3", destination: SelectLightsView(button: "Button 3"))
-                    NavigationLink("Button 4", destination: SelectLightsView(button: "Button 4"))
-
+                // **Edit Button Name**
+                Section(header: Text("Name")) {
+                    TextField("Enter button name", text: $buttonName, onCommit: saveButtonName)
                 }
                 
+                // **Navigate to Select Lights**
+                Section(header: Text("devices")) {
+                    NavigationLink("Select lights", destination: SelectLightsView(button: buttonID))
+                }
+                
+                // **Debug Section**
                 Section(header: Text("Debug")) {
-                    Toggle("Show OnboardingingView", isOn: $isOnboardingShowing)
+                    Toggle("Show OnboardingView", isOn: $isOnboardingShowing)
                 }
             }
             .navigationTitle("Options")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Close") {
+                        saveButtonName()
                         dismiss()
                     }
                 }
-            }
         }
+    }
+    
+    // **Persist Button Name**
+    private func saveButtonName() {
+        UserDefaults.standard.set(buttonName, forKey: "buttonName_\(buttonID)")
     }
 }
 
 #Preview {
-    OptionsView()
+    NavigationView(){
+        OptionsView(buttonID: "Button 1")
+    }
 }

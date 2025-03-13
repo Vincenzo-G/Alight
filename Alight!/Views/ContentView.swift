@@ -92,10 +92,10 @@ struct ContentView: View {
                 
                 // Griglia con 4 pulsanti
                 LazyVGrid(columns: [GridItem(.flexible()),
-                                     GridItem(.flexible())],
+                                    GridItem(.flexible())],
                           spacing: 10) {
                     
-                    AnimationButton(title: "Doorbell",
+                    AnimationButton(buttonID: "Button 1",
                                     primaryIcon: "bell.fill",
                                     shapeIcon: "circle.fill",
                                     color: Color(hex: "E89D00"),
@@ -118,7 +118,7 @@ struct ContentView: View {
                         }
                     }
                     
-                    AnimationButton(title: "Meal",
+                    AnimationButton(buttonID: "Button 2",
                                     primaryIcon: "fork.knife",
                                     shapeIcon: "square.fill",
                                     color: Color(hex: "24709F"),
@@ -141,7 +141,7 @@ struct ContentView: View {
                         }
                     }
                     
-                    AnimationButton(title: "Alert",
+                    AnimationButton(buttonID: "Button 3",
                                     primaryIcon: "light.beacon.max.fill",
                                     shapeIcon: "triangle.fill",
                                     color: Color(hex: "B23837"),
@@ -164,7 +164,7 @@ struct ContentView: View {
                         }
                     }
                     
-                    AnimationButton(title: "Approach",
+                    AnimationButton(buttonID: "Button 4",
                                     primaryIcon: "figure.walk",
                                     shapeIcon: "pentagon.fill",
                                     color: Color(hex: "237F52"),
@@ -187,28 +187,14 @@ struct ContentView: View {
                         }
                     }
                 }
-                .padding()
+                          .padding()
                 
             }
             .padding(.top, 40)
-            
-            // Bottone settings, sempre abilitato
-            Button(action: {
-                isOptionsShowing = true
-            }) {
-                Image(systemName: "ellipsis")
-                    .foregroundColor(colorScheme == .dark ? .white : .black)
-                    .padding(30)
-                    .font(.largeTitle)
-            }
-            .sheet(isPresented: $isOptionsShowing) {
-                OptionsView()
-                
-            }
             .sheet(isPresented: $isOnboardingShowing) {
                 OnboardingView(isOnboardingShowing: $isOnboardingShowing)
             }
-
+            
             
         }
     }
@@ -255,7 +241,7 @@ struct PulseAnimationOverlay: View {
     let shapeSymbol: String
     let color: Color
     @State private var enablePulse = false
-
+    
     var body: some View {
         Image(systemName: shapeSymbol)
             .resizable()
@@ -273,16 +259,34 @@ struct PulseAnimationOverlay: View {
 }
 
 // Componente per ciascun pulsante
+
 struct AnimationButton: View {
     @Environment(\.colorScheme) var colorScheme
     
-    let title: String
+    let buttonID: String  // Unique ID to fetch and save the button name
     let primaryIcon: String
     let shapeIcon: String
     let color: Color
     let isActive: Bool
     let anyButtonActive: Bool
     let action: () -> Void
+    
+    @State private var isOptionsShowing = false  // State for OptionsView
+    @State private var buttonName: String // Persistent button name
+    
+    init(buttonID: String, primaryIcon: String, shapeIcon: String, color: Color, isActive: Bool, anyButtonActive: Bool, action: @escaping () -> Void) {
+        self.buttonID = buttonID
+        self.primaryIcon = primaryIcon
+        self.shapeIcon = shapeIcon
+        self.color = color
+        self.isActive = isActive
+        self.anyButtonActive = anyButtonActive
+        self.action = action
+        
+        // Load stored name or use default
+        let storedName = UserDefaults.standard.string(forKey: "buttonName_\(buttonID)") ?? buttonID
+        _buttonName = State(initialValue: storedName)
+    }
     
     var dynamicTextColor: Color {
         isActive ? .white : (colorScheme == .dark ? .white : .black)
@@ -295,20 +299,29 @@ struct AnimationButton: View {
     var body: some View {
         Button(action: action) {
             VStack {
-                // Icona in alto a sinistra
                 HStack {
                     Image(systemName: primaryIcon)
                         .font(.largeTitle)
                         .foregroundColor(dynamicTextColor)
                     Spacer()
+                    
+                    // **Three Dots Button (Opens OptionsView)**
+                    Button(action: {
+                        isOptionsShowing = true
+                    }) {
+                        Image(systemName: "ellipsis")
+                            .font(.title2)
+                            .foregroundColor(dynamicTextColor.opacity(0.7))
+                    }
+                    .disabled(anyButtonActive && !isActive)  // Disable if other button is active
                 }
                 .padding(.top, 10)
                 
                 Spacer()
                 
-                // Testo in basso a sinistra e icona della forma in basso a destra
+                // **Bottom Section: Title + Shape Icon**
                 HStack {
-                    Text(title)
+                    Text(buttonName)  // Uses persistent button name
                         .font(.headline)
                         .foregroundColor(dynamicTextColor)
                     Spacer()
@@ -322,10 +335,15 @@ struct AnimationButton: View {
             .background(dynamicButtonBackground)
             .cornerRadius(20)
         }
-        .disabled(anyButtonActive && !isActive)
+        .disabled(anyButtonActive && !isActive)  // Disable button when needed
+        .sheet(isPresented: $isOptionsShowing, onDismiss: {
+            // ✅ Reload the button name when OptionsView closes
+            buttonName = UserDefaults.standard.string(forKey: "buttonName_\(buttonID)") ?? buttonID
+        }) {
+            OptionsView(buttonID: buttonID)  // Pass only buttonID
+        }
     }
 }
-
 
 #Preview {
     ContentView()
