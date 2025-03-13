@@ -14,7 +14,6 @@ struct SelectLightsView: View {
         return Set(allLightIDs).isSubset(of: homeManager.selectedLights[button] ?? [])
     }
     
-    
     var body: some View {
         List {
             // Toggle to select/deselect all lights for this specific button

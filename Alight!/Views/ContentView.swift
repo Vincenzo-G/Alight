@@ -247,7 +247,7 @@ struct AnimationButton: View {
     @State private var isOptionsShowing = false
     @State private var buttonName: String
 
-    // ✅ Default names for each button
+    // Default names for each button
     private let defaultNames: [String: String] = [
         "Button 1": "Doorbell",
         "Button 2": "Meal",
@@ -264,10 +264,10 @@ struct AnimationButton: View {
         self.anyButtonActive = anyButtonActive
         self.action = action
         
-        // ✅ Check UserDefaults or use default name
+        // Check UserDefaults or use default name
         let storedName = UserDefaults.standard.string(forKey: "buttonName_\(buttonID)")
             ?? defaultNames[buttonID]
-            ?? buttonID  // Fallback if no default exists
+            ?? buttonID
         _buttonName = State(initialValue: storedName)
     }
     
@@ -288,7 +288,7 @@ struct AnimationButton: View {
                         .foregroundColor(dynamicTextColor)
                     Spacer()
                     
-                    // **Three Dots Button (Opens OptionsView)**
+                    // Three Dots Button (Opens OptionsView)
                     Button(action: {
                         isOptionsShowing = true
                     }) {
@@ -320,7 +320,7 @@ struct AnimationButton: View {
         }
         .disabled(anyButtonActive && !isActive)
         .sheet(isPresented: $isOptionsShowing, onDismiss: {
-            // ✅ Refresh button name after closing OptionsView
+            // Refresh button name after closing OptionsView
             buttonName = UserDefaults.standard.string(forKey: "buttonName_\(buttonID)")
                 ?? defaultNames[buttonID]
                 ?? buttonID

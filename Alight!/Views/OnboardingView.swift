@@ -11,12 +11,11 @@ import SwiftUI
 struct OnboardingView: View {
     
     @Binding var isOnboardingShowing: Bool
-    @State private var currentIndex: Int = 0  // ✅ Track the current page index
-    @FocusState private var isKeyboardVisible: Bool  // ✅ Track keyboard visibility
+    @State private var currentIndex: Int = 0
     
     var body: some View {
         VStack {
-            TabView(selection: $currentIndex) {  // ✅ Track current index
+            TabView(selection: $currentIndex) {
                 OnboardingPageView(systemImageName: "globe", title: "Welcome", description: "Welcome to the app", color: .blue)
                     .tag(0)
                 
@@ -26,13 +25,13 @@ struct OnboardingView: View {
                 OnboardingPageView(systemImageName: "square", title: "Quadrato", description: "Queste sono le informazioni", color: .blue)
                     .tag(2)
             }
-            .tabViewStyle(.page(indexDisplayMode: isKeyboardVisible ? .never : .always))  // ✅ Hide when keyboard appears
-            .indexViewStyle(.page(backgroundDisplayMode: isKeyboardVisible ? .never : .always))
+            .tabViewStyle(.page(indexDisplayMode: .always))
+            .indexViewStyle(.page(backgroundDisplayMode: .always))
             .interactiveDismissDisabled(true)
             
-            // ✅ "Continue" button visible but only enabled on the last page
+            // "Continue" button visible but only enabled on the last page
             Button {
-                if currentIndex == 2 {  // ✅ Only allow tap if on last page
+                if currentIndex == 2 {  //
                     isOnboardingShowing.toggle()
                 }
             } label: {
@@ -44,8 +43,8 @@ struct OnboardingView: View {
             }
             .buttonStyle(.borderedProminent)
             .padding()
-            .disabled(currentIndex < 2)  // ✅ Disabled unless on last page
-            .opacity(currentIndex < 2 ? 0.5 : 1.0)  // ✅ Greyed out if disabled
+            .disabled(currentIndex < 2)
+            .opacity(currentIndex < 2 ? 0.5 : 1.0)
         }
     }
 }
