@@ -87,7 +87,7 @@ struct ContentView: View {
                                     isActive: activeButton == "Doorbell",
                                     anyButtonActive: activeButton != nil) {
                         guard activeButton == nil else { return }
-                        homeManager.flashLights(button: "Button 1", cycles: 3, colorHue: 40)
+                        homeManager.flashLights(button: "Button 1",  colorHue: 40)
                         withAnimation(.easeInOut(duration: 0.5)) {
                             activeButton = "Doorbell"
                             selectedShape = "circle.fill"
@@ -108,7 +108,7 @@ struct ContentView: View {
                                     isActive: activeButton == "Meal",
                                     anyButtonActive: activeButton != nil) {
                         guard activeButton == nil else { return }
-                        homeManager.flashLights(button: "Button 2", cycles: 3, colorHue: 240)
+                        homeManager.flashLights(button: "Button 2",  colorHue: 240)
                         withAnimation(.easeInOut(duration: 0.5)) {
                             activeButton = "Meal"
                             selectedShape = "square.fill"
@@ -129,7 +129,7 @@ struct ContentView: View {
                                     isActive: activeButton == "Alert",
                                     anyButtonActive: activeButton != nil) {
                         guard activeButton == nil else { return }
-                        homeManager.flashLights(button: "Button 3", cycles: 3, colorHue: 0)
+                        homeManager.flashLights(button: "Button 3",  colorHue: 0)
                         withAnimation(.easeInOut(duration: 0.5)) {
                             activeButton = "Alert"
                             selectedShape = "triangle.fill"
@@ -150,7 +150,7 @@ struct ContentView: View {
                                     isActive: activeButton == "Approach",
                                     anyButtonActive: activeButton != nil) {
                         guard activeButton == nil else { return }
-                        homeManager.flashLights(button: "Button 4", cycles: 3, colorHue: 120)
+                        homeManager.flashLights(button: "Button 4",  colorHue: 120)
                         withAnimation(.easeInOut(duration: 0.5)) {
                             activeButton = "Approach"
                             selectedShape = "pentagon.fill"
