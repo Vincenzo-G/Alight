@@ -4,10 +4,10 @@
 //
 //  Created by Vincenzo Gerelli on 12/03/25.
 //
-
 import SwiftUI
 
-// Estensione per creare un Color da una stringa esadecimale
+// MARK: - Estensione per creare un Color da una stringa esadecimale
+
 extension Color {
     init(hex: String) {
         let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
@@ -34,7 +34,28 @@ extension Color {
     }
 }
 
-// View che crea l'effetto gradient overlay, passando dal bianco al colore della forma
+// MARK: - ProgressBarOverlay
+
+/// Questa view disegna un rettangolo che, partendo da una larghezza pari a 100% (progress = 1.0),
+/// si riduce da destra verso sinistra fino a 0% in 20 secondi.
+struct ProgressBarOverlay: View {
+    @Binding var progress: Double  // 1.0 = barra piena, 0.0 = vuota
+    let activeColor: Color
+
+    var body: some View {
+        GeometryReader { geometry in
+            Rectangle()
+                .fill(activeColor)
+                .frame(width: geometry.size.width * progress)
+                .animation(.linear(duration: 20), value: progress)
+                .frame(maxHeight: .infinity, alignment: .leading)
+        }
+        .clipped()
+    }
+}
+
+// MARK: - Altre View (invariate)
+
 struct GradientOverlay: View {
     let shapeSymbol: String
     let baseColor: Color
@@ -56,22 +77,42 @@ struct GradientOverlay: View {
     }
 }
 
-// Vista per la forma centrale
 struct PulsingShapeView: View {
     let shapeSymbol: String
     let color: Color
-    @State private var pulse = false
 
+    // Stato per la pulsazione nelle forme diverse dal cerchio idle
+    @State private var pulse = false
+    // Stato per il rimbalzo one-shot del cerchio idle
+    @State private var idleBounce = false
+    // Stato per tenere traccia dell'ultima forma mostrata
+    @State private var lastShape: String = "circle"
+    
     var body: some View {
-        ZStack {
+        Group {
             if shapeSymbol == "circle" {
-                // Stato idle: il cerchio che, in uscita, si riduce a zero
+                // Vista idle: applica il bounce solo al passaggio da una forma diversa
                 Circle()
                     .stroke(Color(hex: "BDBDBD"), lineWidth: 15)
                     .frame(width: 330, height: 330)
-                    .transition(.asymmetric(insertion: .scale, removal: .scale))
+                    .scaleEffect(idleBounce ? 1.05 : 1.0)
+                    .onAppear {
+                        // Se la vista idle è apparsa dopo una forma diversa, esegui il bounce
+                        if lastShape != "circle" {
+                            withAnimation(Animation.interpolatingSpring(stiffness: 100, damping: 10)) {
+                                idleBounce = true
+                            }
+                            // Dopo un breve intervallo, torna alla scala normale
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                                withAnimation(Animation.interpolatingSpring(stiffness: 100, damping: 10)) {
+                                    idleBounce = false
+                                }
+                            }
+                        }
+                        lastShape = "circle"
+                    }
             } else {
-                // Stato attivo: la nuova forma che appare crescendo da zero
+                // Vista per le altre forme: animazione di pulsazione continua
                 Image(systemName: shapeSymbol)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
@@ -80,26 +121,24 @@ struct PulsingShapeView: View {
                     .shadow(color: color.opacity(pulse ? 0.9 : 0.3), radius: pulse ? 20 : 10)
                     .overlay(PulseAnimationOverlay(shapeSymbol: shapeSymbol, color: color))
                     .overlay(GradientOverlay(shapeSymbol: shapeSymbol, baseColor: color, pulse: pulse))
-                    .transition(.asymmetric(insertion: .scale, removal: .scale))
                     .onAppear {
-                        startAnimation()
+                        // Avvia la pulsazione continua
+                        pulse = false
+                        withAnimation(Animation.easeInOut(duration: 1.0).repeatForever(autoreverses: true)) {
+                            pulse = true
+                        }
+                        lastShape = shapeSymbol
                     }
             }
         }
-        // Animazione della transizione basata sul cambiamento di shapeSymbol
-        .animation(.easeInOut(duration: 0.5), value: shapeSymbol)
-    }
-    
-    private func startAnimation() {
-        pulse = false
-        withAnimation(Animation.easeInOut(duration: 1.0).repeatForever(autoreverses: true)) {
-            pulse = true
-        }
+        // La transizione spring viene applicata al cambio di view
+        .transition(.scale)
+        .id(shapeSymbol) // Forza SwiftUI a considerare il cambio di view come nuovo elemento
+        .animation(.interpolatingSpring(stiffness: 40, damping: 100), value: shapeSymbol)
     }
 }
 
 
-// View che crea l'effetto pulse overlay, utilizzando lo stesso SF Symbol e colore
 struct PulseAnimationOverlay: View {
     let shapeSymbol: String
     let color: Color
@@ -121,7 +160,10 @@ struct PulseAnimationOverlay: View {
     }
 }
 
-// Componente per ciascun pulsante
+// MARK: - AnimationButton
+
+/// Questo componente rappresenta un pulsante che, se attivo, mostra un overlay che "si svuota" come una barra
+/// e in light mode gli elementi (icone e testo) vengono visualizzati in nero.
 struct AnimationButton: View {
     @Environment(\.colorScheme) var colorScheme
     
@@ -132,11 +174,11 @@ struct AnimationButton: View {
     let isActive: Bool
     let anyButtonActive: Bool
     let action: () -> Void
-    
+    let countdownProgress: Binding<Double>?  // Binding per il progresso della barra
+
     @State private var isOptionsShowing = false
     @State private var buttonName: String
 
-    // Nomi di default per ciascun pulsante
     private let defaultNames: [String: String] = [
         "Button 1": "Doorbell",
         "Button 2": "Meal",
@@ -144,7 +186,14 @@ struct AnimationButton: View {
         "Button 4": "Approach"
     ]
     
-    init(buttonID: String, primaryIcon: String, shapeIcon: String, color: Color, isActive: Bool, anyButtonActive: Bool, action: @escaping () -> Void) {
+    init(buttonID: String,
+         primaryIcon: String,
+         shapeIcon: String,
+         color: Color,
+         isActive: Bool,
+         anyButtonActive: Bool,
+         countdownProgress: Binding<Double>? = nil,
+         action: @escaping () -> Void) {
         self.buttonID = buttonID
         self.primaryIcon = primaryIcon
         self.shapeIcon = shapeIcon
@@ -152,82 +201,92 @@ struct AnimationButton: View {
         self.isActive = isActive
         self.anyButtonActive = anyButtonActive
         self.action = action
+        self.countdownProgress = countdownProgress
         
-        // Controlla UserDefaults o usa il nome di default
         let storedName = UserDefaults.standard.string(forKey: "buttonName_\(buttonID)")
             ?? defaultNames[buttonID]
-            ?? buttonID  // Fallback se non esiste un default
+            ?? buttonID
         _buttonName = State(initialValue: storedName)
     }
     
-    // Se un pulsante non è attivo e un altro è attivo, il testo diventa grigio
+    // Sfondo idle: in light mode è bianco, in dark mode systemGray4
+    var idleBackground: Color {
+        colorScheme == .light ? Color(hex: "FFFFFF") : Color(UIColor.systemGray4)
+    }
+    
+    /// Se il pulsante è attivo in light mode, il colore di testo e delle icone diventa nero (in dark mode resta bianco);
+    /// se inattivo, si usano i colori standard.
     var dynamicTextColor: Color {
         if anyButtonActive && !isActive {
-            return Color.gray
+            return .gray
         } else {
-            return isActive ? .white : (colorScheme == .dark ? .white : .black)
+            if isActive {
+                return colorScheme == .light ? .black : .white
+            } else {
+                return colorScheme == .light ? .black : .white
+            }
         }
     }
     
-    // Se un pulsante non è attivo e un altro è attivo, anche l'icona della forma diventa grigia
+    /// Per l'icona della forma in basso a destra: se il pulsante è attivo, in light mode diventa nero, altrimenti si usa il colore originale.
     var dynamicShapeIconColor: Color {
         if anyButtonActive && !isActive {
-            return Color.gray
+            return .gray
         } else {
-            return color
-        }
-    }
-    
-    var dynamicButtonBackground: Color {
-        if anyButtonActive && !isActive {
-            return Color.gray.opacity(0.3)
-        } else {
-            return isActive ? color : (colorScheme == .light ? Color(hex: "FFFFFF") : Color(UIColor.systemGray4))
+            if isActive {
+                return colorScheme == .light ? .black : .white
+            } else {
+                return color
+            }
         }
     }
     
     var body: some View {
         Button(action: action) {
-            VStack {
-                HStack {
-                    Image(systemName: primaryIcon)
-                        .font(.largeTitle)
-                        .foregroundColor(dynamicTextColor)
+            ZStack {
+                // Sfondo idle
+                idleBackground
+                
+                // Se il pulsante è attivo, aggiungiamo l'overlay che "si svuota"
+                if isActive, let countdownProgress = countdownProgress {
+                    ProgressBarOverlay(progress: countdownProgress, activeColor: color)
+                }
+                
+                // Contenuto del pulsante
+                VStack {
+                    HStack {
+                        Image(systemName: primaryIcon)
+                            .font(.largeTitle)
+                            .foregroundColor(dynamicTextColor)
+                        Spacer()
+                        Button(action: { isOptionsShowing = true }) {
+                            Image(systemName: "ellipsis")
+                                .font(.title2)
+                                .foregroundColor(dynamicTextColor.opacity(0.7))
+                        }
+                        .disabled(anyButtonActive && !isActive)
+                    }
+                    .padding(.top, 10)
+                    
                     Spacer()
                     
-                    // Pulsante "Three Dots" per aprire OptionsView
-                    Button(action: {
-                        isOptionsShowing = true
-                    }) {
-                        Image(systemName: "ellipsis")
-                            .font(.title2)
-                            .foregroundColor(dynamicTextColor.opacity(0.7))
+                    HStack {
+                        Text(buttonName)
+                            .font(.headline)
+                            .foregroundColor(dynamicTextColor)
+                        Spacer()
+                        Image(systemName: shapeIcon)
+                            .font(.title)
+                            .foregroundColor(dynamicShapeIconColor)
                     }
-                    .disabled(anyButtonActive && !isActive)
                 }
-                .padding(.top, 10)
-                
-                Spacer()
-                
-                // Sezione inferiore: titolo + icona della forma
-                HStack {
-                    Text(buttonName)
-                        .font(.headline)
-                        .foregroundColor(dynamicTextColor)
-                    Spacer()
-                    Image(systemName: shapeIcon)
-                        .font(.title)
-                        .foregroundColor(dynamicShapeIconColor)
-                }
+                .padding()
             }
-            .padding()
             .frame(maxWidth: .infinity, minHeight: 150)
-            .background(dynamicButtonBackground)
             .cornerRadius(20)
         }
         .disabled(anyButtonActive && !isActive)
         .sheet(isPresented: $isOptionsShowing, onDismiss: {
-            // Aggiorna il nome del pulsante dopo la chiusura di OptionsView
             buttonName = UserDefaults.standard.string(forKey: "buttonName_\(buttonID)")
                 ?? defaultNames[buttonID]
                 ?? buttonID
@@ -239,9 +298,9 @@ struct AnimationButton: View {
     }
 }
 
-// Vista principale
+// MARK: - ContentView
+
 struct ContentView: View {
-    
     @StateObject private var homeManager = HomeManager()
     @AppStorage("isOnboardingShowing") private var isOnboardingShowing = true
     
@@ -249,8 +308,9 @@ struct ContentView: View {
     @State private var selectedShape: String = "circle"
     @State private var selectedColor: Color = .white
     @State private var activeButton: String? = nil
-    @State private var animationWorkItem: DispatchWorkItem? = nil  // Variabile per gestire il blocco programmato
-    
+    @State private var animationWorkItem: DispatchWorkItem? = nil
+    @State private var progress: Double = 1.0  // Barra piena (1.0 = piena, 0.0 = vuota)
+
     var body: some View {
         ZStack(alignment: .topTrailing) {
             Color(colorScheme == .light ? Color(hex: "E5E5EA") : Color(hex: "1C1C1E"))
@@ -259,6 +319,7 @@ struct ContentView: View {
             VStack {
                 Spacer()
                 
+                // La vista centrale (la forma) rimane invariata
                 PulsingShapeView(shapeSymbol: selectedShape, color: selectedColor)
                     .frame(width: 300, height: 300)
                 
@@ -266,25 +327,27 @@ struct ContentView: View {
                 
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
                     
-                    // Pulsante 1
-                    AnimationButton(buttonID: "Button 1",
-                                    primaryIcon: "bell.fill",
-                                    shapeIcon: "circle.fill",
-                                    color: Color(hex: "E89D00"),
-                                    isActive: activeButton == "Doorbell",
-                                    anyButtonActive: activeButton != nil) {
+                    // Button 1
+                    AnimationButton(
+                        buttonID: "Button 1",
+                        primaryIcon: "bell.fill",
+                        shapeIcon: "circle.fill",
+                        color: Color(hex: "E89D00"),
+                        isActive: activeButton == "Doorbell",
+                        anyButtonActive: activeButton != nil,
+                        countdownProgress: activeButton == "Doorbell" ? $progress : nil
+                    ) {
                         if activeButton == "Doorbell" {
-                            // Se il pulsante attivo viene ripremuto, annulla il blocco programmato e torna in stato idle
                             animationWorkItem?.cancel()
                             animationWorkItem = nil
                             withAnimation(.easeInOut(duration: 0.5)) {
                                 selectedShape = "circle"
                                 activeButton = nil
                             }
+                            progress = 1.0
                             return
                         }
                         
-                        // Attiva l'animazione
                         homeManager.flashLights(button: "Button 1", colorHue: 40)
                         withAnimation(.easeInOut(duration: 0.5)) {
                             activeButton = "Doorbell"
@@ -292,23 +355,32 @@ struct ContentView: View {
                             selectedColor = Color(hex: "E89D00")
                         }
                         
+                        progress = 1.0
+                        withAnimation(.linear(duration: 20)) {
+                            progress = 0.0
+                        }
+                        
                         let workItem = DispatchWorkItem {
                             withAnimation(.easeInOut(duration: 0.5)) {
                                 selectedShape = "circle"
                                 activeButton = nil
                             }
+                            progress = 1.0
                         }
                         animationWorkItem = workItem
                         DispatchQueue.main.asyncAfter(deadline: .now() + 20, execute: workItem)
                     }
                     
-                    // Pulsante 2
-                    AnimationButton(buttonID: "Button 2",
-                                    primaryIcon: "fork.knife",
-                                    shapeIcon: "square.fill",
-                                    color: Color(hex: "24709F"),
-                                    isActive: activeButton == "Meal",
-                                    anyButtonActive: activeButton != nil) {
+                    // Button 2
+                    AnimationButton(
+                        buttonID: "Button 2",
+                        primaryIcon: "fork.knife",
+                        shapeIcon: "square.fill",
+                        color: Color(hex: "24709F"),
+                        isActive: activeButton == "Meal",
+                        anyButtonActive: activeButton != nil,
+                        countdownProgress: activeButton == "Meal" ? $progress : nil
+                    ) {
                         if activeButton == "Meal" {
                             animationWorkItem?.cancel()
                             animationWorkItem = nil
@@ -316,6 +388,7 @@ struct ContentView: View {
                                 selectedShape = "circle"
                                 activeButton = nil
                             }
+                            progress = 1.0
                             return
                         }
                         
@@ -326,23 +399,32 @@ struct ContentView: View {
                             selectedColor = Color(hex: "24709F")
                         }
                         
+                        progress = 1.0
+                        withAnimation(.linear(duration: 20)) {
+                            progress = 0.0
+                        }
+                        
                         let workItem = DispatchWorkItem {
                             withAnimation(.easeInOut(duration: 0.5)) {
                                 selectedShape = "circle"
                                 activeButton = nil
                             }
+                            progress = 1.0
                         }
                         animationWorkItem = workItem
                         DispatchQueue.main.asyncAfter(deadline: .now() + 20, execute: workItem)
                     }
                     
-                    // Pulsante 3
-                    AnimationButton(buttonID: "Button 3",
-                                    primaryIcon: "light.beacon.max.fill",
-                                    shapeIcon: "triangle.fill",
-                                    color: Color(hex: "B23837"),
-                                    isActive: activeButton == "Alert",
-                                    anyButtonActive: activeButton != nil) {
+                    // Button 3
+                    AnimationButton(
+                        buttonID: "Button 3",
+                        primaryIcon: "light.beacon.max.fill",
+                        shapeIcon: "triangle.fill",
+                        color: Color(hex: "B23837"),
+                        isActive: activeButton == "Alert",
+                        anyButtonActive: activeButton != nil,
+                        countdownProgress: activeButton == "Alert" ? $progress : nil
+                    ) {
                         if activeButton == "Alert" {
                             animationWorkItem?.cancel()
                             animationWorkItem = nil
@@ -350,6 +432,7 @@ struct ContentView: View {
                                 selectedShape = "circle"
                                 activeButton = nil
                             }
+                            progress = 1.0
                             return
                         }
                         
@@ -360,23 +443,32 @@ struct ContentView: View {
                             selectedColor = Color(hex: "B23837")
                         }
                         
+                        progress = 1.0
+                        withAnimation(.linear(duration: 20)) {
+                            progress = 0.0
+                        }
+                        
                         let workItem = DispatchWorkItem {
                             withAnimation(.easeInOut(duration: 0.5)) {
                                 selectedShape = "circle"
                                 activeButton = nil
                             }
+                            progress = 1.0
                         }
                         animationWorkItem = workItem
                         DispatchQueue.main.asyncAfter(deadline: .now() + 20, execute: workItem)
                     }
                     
-                    // Pulsante 4
-                    AnimationButton(buttonID: "Button 4",
-                                    primaryIcon: "figure.walk",
-                                    shapeIcon: "pentagon.fill",
-                                    color: Color(hex: "237F52"),
-                                    isActive: activeButton == "Approach",
-                                    anyButtonActive: activeButton != nil) {
+                    // Button 4
+                    AnimationButton(
+                        buttonID: "Button 4",
+                        primaryIcon: "figure.walk",
+                        shapeIcon: "pentagon.fill",
+                        color: Color(hex: "237F52"),
+                        isActive: activeButton == "Approach",
+                        anyButtonActive: activeButton != nil,
+                        countdownProgress: activeButton == "Approach" ? $progress : nil
+                    ) {
                         if activeButton == "Approach" {
                             animationWorkItem?.cancel()
                             animationWorkItem = nil
@@ -384,6 +476,7 @@ struct ContentView: View {
                                 selectedShape = "circle"
                                 activeButton = nil
                             }
+                            progress = 1.0
                             return
                         }
                         
@@ -394,11 +487,17 @@ struct ContentView: View {
                             selectedColor = Color(hex: "237F52")
                         }
                         
+                        progress = 1.0
+                        withAnimation(.linear(duration: 20)) {
+                            progress = 0.0
+                        }
+                        
                         let workItem = DispatchWorkItem {
                             withAnimation(.easeInOut(duration: 0.5)) {
                                 selectedShape = "circle"
                                 activeButton = nil
                             }
+                            progress = 1.0
                         }
                         animationWorkItem = workItem
                         DispatchQueue.main.asyncAfter(deadline: .now() + 20, execute: workItem)
@@ -413,8 +512,6 @@ struct ContentView: View {
         }
     }
 }
-
-
 
 #Preview {
     ContentView()
