@@ -337,9 +337,20 @@ struct ContentView: View {
                         anyButtonActive: activeButton != nil,
                         countdownProgress: activeButton == "Doorbell" ? $progress : nil
                     ) {
+                        // Se il pulsante è già attivo, annulla l’animazione, resetta l’UI
+                        // e spegni le luci selezionate per questo pulsante.
                         if activeButton == "Doorbell" {
                             animationWorkItem?.cancel()
                             animationWorkItem = nil
+                            
+                            // Recupera le luci selezionate per Button 1 e chiama turnOff su ciascuna
+                            let lightsToTurnOff = homeManager.lights.filter {
+                                homeManager.selectedLights["Button 1"]?.contains($0.uniqueIdentifier) ?? false
+                            }
+                            for light in lightsToTurnOff {
+                                homeManager.turnOff(light)
+                            }
+                            
                             withAnimation(.easeInOut(duration: 0.5)) {
                                 selectedShape = "circle"
                                 activeButton = nil
@@ -348,6 +359,7 @@ struct ContentView: View {
                             return
                         }
                         
+                        // Se il pulsante non è attivo, avvia il flashing delle luci e l’animazione
                         homeManager.flashLights(button: "Button 1", colorHue: 40)
                         withAnimation(.easeInOut(duration: 0.5)) {
                             activeButton = "Doorbell"
@@ -370,6 +382,7 @@ struct ContentView: View {
                         animationWorkItem = workItem
                         DispatchQueue.main.asyncAfter(deadline: .now() + 20, execute: workItem)
                     }
+
                     
                     // Button 2
                     AnimationButton(
