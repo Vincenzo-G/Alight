@@ -174,16 +174,16 @@ class HomeManager: NSObject, ObservableObject, HMHomeManagerDelegate {
         }
     }
 
+    var isCancelled = false // Variabile di controllo a livello di classe o contesto
+
     
     
     func flashLights(button: String, brightness: Double = 100, saturation: Double = 100, colorHue: Double) {
         let duration: TimeInterval = 20 // Durata totale in secondi
         currentAction = "Flashing lights for \(button)"
         
-        // Carica le luci selezionate per il pulsante specifico
         loadSelectedLights()
         
-        // Ottieni le luci selezionate per questo pulsante
         let lightsToFlash = lights.filter { selectedLights[button]?.contains($0.uniqueIdentifier) ?? false }
         
         guard !lightsToFlash.isEmpty else {
@@ -199,13 +199,20 @@ class HomeManager: NSObject, ObservableObject, HMHomeManagerDelegate {
             let startTime = Date()
             
             func performToggle() {
+                if isCancelled {
+                    // Se il processo viene annullato, spegni la luce e interrompi il ciclo
+                    turnOff(light)
+                    print("❌ Flashing cancelled for \(light.name)")
+                    return
+                }
+                
                 let elapsedTime = Date().timeIntervalSince(startTime)
                 if elapsedTime >= duration {
-                    // Alla fine del lampeggiamento, richiamo la funzione turnOff per spegnere la luce
                     turnOff(light)
                     print("✅ Flashing completed for \(light.name) in \(button) - Light turned off")
                     return
                 }
+                
                 toggleLight(light)
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
                     performToggle()
@@ -219,8 +226,6 @@ class HomeManager: NSObject, ObservableObject, HMHomeManagerDelegate {
             self.currentAction = "Idle"
         }
     }
-
-    
     
     
 //    // Funzione per far lampeggiare tutte le luci della casa

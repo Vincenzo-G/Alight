@@ -343,6 +343,9 @@ struct ContentView: View {
                             animationWorkItem?.cancel()
                             animationWorkItem = nil
                             
+                            // Imposta isCancelled a true per interrompere il flashing delle luci
+                            homeManager.isCancelled = true
+
                             // Recupera le luci selezionate per Button 1 e chiama turnOff su ciascuna
                             let lightsToTurnOff = homeManager.lights.filter {
                                 homeManager.selectedLights["Button 1"]?.contains($0.uniqueIdentifier) ?? false
@@ -360,6 +363,8 @@ struct ContentView: View {
                         }
                         
                         // Se il pulsante non è attivo, avvia il flashing delle luci e l’animazione
+                        // Assicurati di resettare isCancelled a false prima di avviare una nuova animazione
+                        homeManager.isCancelled = false
                         homeManager.flashLights(button: "Button 1", colorHue: 40)
                         withAnimation(.easeInOut(duration: 0.5)) {
                             activeButton = "Doorbell"
@@ -397,6 +402,18 @@ struct ContentView: View {
                         if activeButton == "Meal" {
                             animationWorkItem?.cancel()
                             animationWorkItem = nil
+                            
+                            // Imposta il flag di cancellazione per interrompere il flashing
+                            homeManager.isCancelled = true
+                            
+                            // Recupera le luci selezionate per Button 2 e spegnile
+                            let lightsToTurnOff = homeManager.lights.filter {
+                                homeManager.selectedLights["Button 2"]?.contains($0.uniqueIdentifier) ?? false
+                            }
+                            for light in lightsToTurnOff {
+                                homeManager.turnOff(light)
+                            }
+                            
                             withAnimation(.easeInOut(duration: 0.5)) {
                                 selectedShape = "circle"
                                 activeButton = nil
@@ -405,6 +422,8 @@ struct ContentView: View {
                             return
                         }
                         
+                        // Resetta il flag prima di avviare una nuova animazione
+                        homeManager.isCancelled = false
                         homeManager.flashLights(button: "Button 2", colorHue: 240)
                         withAnimation(.easeInOut(duration: 0.5)) {
                             activeButton = "Meal"
@@ -427,7 +446,7 @@ struct ContentView: View {
                         animationWorkItem = workItem
                         DispatchQueue.main.asyncAfter(deadline: .now() + 20, execute: workItem)
                     }
-                    
+
                     // Button 3
                     AnimationButton(
                         buttonID: "Button 3",
@@ -441,6 +460,18 @@ struct ContentView: View {
                         if activeButton == "Alert" {
                             animationWorkItem?.cancel()
                             animationWorkItem = nil
+                            
+                            // Imposta il flag di cancellazione per interrompere il flashing
+                            homeManager.isCancelled = true
+                            
+                            // Recupera le luci selezionate per Button 3 e spegnile
+                            let lightsToTurnOff = homeManager.lights.filter {
+                                homeManager.selectedLights["Button 3"]?.contains($0.uniqueIdentifier) ?? false
+                            }
+                            for light in lightsToTurnOff {
+                                homeManager.turnOff(light)
+                            }
+                            
                             withAnimation(.easeInOut(duration: 0.5)) {
                                 selectedShape = "circle"
                                 activeButton = nil
@@ -449,6 +480,8 @@ struct ContentView: View {
                             return
                         }
                         
+                        // Resetta il flag prima di avviare una nuova animazione
+                        homeManager.isCancelled = false
                         homeManager.flashLights(button: "Button 3", colorHue: 0)
                         withAnimation(.easeInOut(duration: 0.5)) {
                             activeButton = "Alert"
@@ -471,7 +504,7 @@ struct ContentView: View {
                         animationWorkItem = workItem
                         DispatchQueue.main.asyncAfter(deadline: .now() + 20, execute: workItem)
                     }
-                    
+
                     // Button 4
                     AnimationButton(
                         buttonID: "Button 4",
@@ -485,6 +518,18 @@ struct ContentView: View {
                         if activeButton == "Approach" {
                             animationWorkItem?.cancel()
                             animationWorkItem = nil
+                            
+                            // Imposta il flag di cancellazione per interrompere il flashing
+                            homeManager.isCancelled = true
+                            
+                            // Recupera le luci selezionate per Button 4 e spegnile
+                            let lightsToTurnOff = homeManager.lights.filter {
+                                homeManager.selectedLights["Button 4"]?.contains($0.uniqueIdentifier) ?? false
+                            }
+                            for light in lightsToTurnOff {
+                                homeManager.turnOff(light)
+                            }
+                            
                             withAnimation(.easeInOut(duration: 0.5)) {
                                 selectedShape = "circle"
                                 activeButton = nil
@@ -493,6 +538,8 @@ struct ContentView: View {
                             return
                         }
                         
+                        // Resetta il flag prima di avviare una nuova animazione
+                        homeManager.isCancelled = false
                         homeManager.flashLights(button: "Button 4", colorHue: 120)
                         withAnimation(.easeInOut(duration: 0.5)) {
                             activeButton = "Approach"
