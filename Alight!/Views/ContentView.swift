@@ -14,7 +14,7 @@
 
 import SwiftUI
 
-// MARK: - Estensione per creare un Color da una stringa esadecimale
+
 extension Color {
     init(hex: String) {
         let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
@@ -41,241 +41,19 @@ extension Color {
     }
 }
 
-// MARK: - ProgressBarOverlay
-struct ProgressBarOverlay: View {
-    @Binding var progress: Double  // 1.0 = barra piena, 0.0 = vuota
-    let activeColor: Color
+import SwiftUI
 
-    var body: some View {
-        GeometryReader { geometry in
-            Rectangle()
-                .fill(activeColor)
-                .frame(width: geometry.size.width * progress)
-                .animation(.linear(duration: 20), value: progress)
-                .frame(maxHeight: .infinity, alignment: .leading)
-        }
-        .clipped()
-    }
+extension Notification.Name {
+    static let doorbellActivated = Notification.Name("doorbellActivated")
+    static let mealActivated = Notification.Name("mealActivated")
+    static let alertActivated = Notification.Name("alertActivated")
+    static let approachActivated = Notification.Name("approachActivated")
 }
 
-// MARK: - Altre View (invariate)
-struct GradientOverlay: View {
-    let shapeSymbol: String
-    let baseColor: Color
-    let pulse: Bool
-    
-    var body: some View {
-        Image(systemName: shapeSymbol)
-            .resizable()
-            .aspectRatio(contentMode: .fit)
-            .foregroundStyle(
-                LinearGradient(
-                    gradient: Gradient(colors: [Color.white, baseColor]),
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            )
-            .scaleEffect(pulse ? 1.1 : 1.0)
-            .opacity(0.5)
-    }
-}
-
-struct PulsingShapeView: View {
-    let shapeSymbol: String
-    let color: Color
-
-    // Stato per la pulsazione nelle forme diverse dal cerchio idle
-    @State private var pulse = false
-    // Stato per il rimbalzo one-shot del cerchio idle
-    @State private var idleBounce = false
-    // Stato per tenere traccia dell'ultima forma mostrata
-    @State private var lastShape: String = "circle"
-    
-    var body: some View {
-        ZStack {
-            if shapeSymbol == "circle" {
-                Circle()
-                    .stroke(Color(hex: "BDBDBD"), lineWidth: 15)
-                    .frame(width: 330, height: 330)
-                    .scaleEffect(idleBounce ? 1.05 : 1.0)
-                    .onAppear {
-                        if lastShape != "circle" {
-                            withAnimation(Animation.interpolatingSpring(stiffness: 100, damping: 10)) {
-                                idleBounce = true
-                            }
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                                withAnimation(Animation.interpolatingSpring(stiffness: 100, damping: 10)) {
-                                    idleBounce = false
-                                }
-                            }
-                        }
-                        lastShape = "circle"
-                    }
-            } else {
-                Image(systemName: shapeSymbol)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .foregroundColor(color)
-                    .scaleEffect(pulse ? 1.1 : 1.0)
-                    .shadow(color: color.opacity(pulse ? 0.9 : 0.3), radius: pulse ? 20 : 10)
-                    .overlay(PulseAnimationOverlay(shapeSymbol: shapeSymbol, color: color))
-                    .overlay(GradientOverlay(shapeSymbol: shapeSymbol, baseColor: color, pulse: pulse))
-                    .transition(.asymmetric(insertion: .scale, removal: .scale))
-                    .onAppear {
-                        pulse = false
-                        withAnimation(Animation.easeInOut(duration: 1.0).repeatForever(autoreverses: true)) {
-                            pulse = true
-                        }
-                        lastShape = shapeSymbol
-                    }
-            }
-        }
-        .transition(.scale)
-        .id(shapeSymbol)
-        .animation(.interpolatingSpring(stiffness: 40, damping: 100), value: shapeSymbol)
-    }
-}
-
-struct PulseAnimationOverlay: View {
-    let shapeSymbol: String
-    let color: Color
-    @State private var enablePulse = false
-    
-    var body: some View {
-        Image(systemName: shapeSymbol)
-            .resizable()
-            .aspectRatio(contentMode: .fit)
-            .foregroundColor(color)
-            .opacity(enablePulse ? 0 : 0.3)
-            .scaleEffect(enablePulse ? 3 : 1)
-            .blur(radius: enablePulse ? 2 : 0)
-            .onAppear {
-                withAnimation(.linear(duration: 3).repeatForever(autoreverses: false)) {
-                    enablePulse = true
-                }
-            }
-    }
-}
-
-// MARK: - AnimationButton
-struct AnimationButton: View {
-    @Environment(\.colorScheme) var colorScheme
-    
-    let buttonID: String
-    let primaryIcon: String
-    let shapeIcon: String
-    let color: Color
-    let isActive: Bool
-    let anyButtonActive: Bool
-    let action: () -> Void
-    let countdownProgress: Binding<Double>?  // Binding per il progresso della barra
-
-    @State private var isOptionsShowing = false
-    @State private var buttonName: String
-
-    private let defaultNames: [String: String] = [
-        "Button 1": "Doorbell",
-        "Button 2": "Meal",
-        "Button 3": "Alert",
-        "Button 4": "Approach"
-    ]
-    
-    init(buttonID: String,
-         primaryIcon: String,
-         shapeIcon: String,
-         color: Color,
-         isActive: Bool,
-         anyButtonActive: Bool,
-         countdownProgress: Binding<Double>? = nil,
-         action: @escaping () -> Void) {
-        self.buttonID = buttonID
-        self.primaryIcon = primaryIcon
-        self.shapeIcon = shapeIcon
-        self.color = color
-        self.isActive = isActive
-        self.anyButtonActive = anyButtonActive
-        self.action = action
-        self.countdownProgress = countdownProgress
-        
-        let storedName = UserDefaults.standard.string(forKey: "buttonName_\(buttonID)")
-            ?? defaultNames[buttonID]
-            ?? buttonID
-        _buttonName = State(initialValue: storedName)
-    }
-    
-    var dynamicTextColor: Color {
-        if anyButtonActive && !isActive {
-            return .gray
-        } else {
-            return colorScheme == .light ? .black : .white
-        }
-    }
-    
-    var dynamicShapeIconColor: Color {
-        if anyButtonActive && !isActive {
-            return .gray
-        } else {
-            return isActive ? (colorScheme == .light ? .black : .white) : color
-        }
-    }
-    
-    var body: some View {
-        Button(action: action) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .fill(.ultraThinMaterial)
-                
-                if isActive, let countdownProgress = countdownProgress {
-                    ProgressBarOverlay(progress: countdownProgress, activeColor: color)
-                }
-                
-                VStack {
-                    HStack {
-                        Image(systemName: primaryIcon)
-                            .font(.largeTitle)
-                            .foregroundColor(dynamicTextColor)
-                        Spacer()
-                        Button(action: { isOptionsShowing = true }) {
-                            Image(systemName: "ellipsis")
-                                .font(.title2)
-                                .foregroundColor(dynamicTextColor.opacity(0.7))
-                        }
-                    }
-                    .padding(.top, 10)
-                    
-                    Spacer()
-                    
-                    HStack {
-                        Text(buttonName)
-                            .font(.headline)
-                            .foregroundColor(dynamicTextColor)
-                        Spacer()
-                        Image(systemName: shapeIcon)
-                            .font(.title)
-                            .foregroundColor(dynamicShapeIconColor)
-                    }
-                }
-                .padding()
-            }
-            .frame(maxWidth: .infinity, minHeight: 150)
-            .cornerRadius(20)
-        }
-        .sheet(isPresented: $isOptionsShowing, onDismiss: {
-            buttonName = UserDefaults.standard.string(forKey: "buttonName_\(buttonID)")
-                ?? defaultNames[buttonID]
-                ?? buttonID
-        }) {
-            NavigationView {
-                OptionsView(buttonID: buttonID)
-            }
-        }
-    }
-}
-
-// MARK: - ContentView
 struct ContentView: View {
     
     @StateObject private var homeManager = HomeManager.shared
+    @StateObject private var timerManager = VisualTimerManager()
     @AppStorage("isOnboardingShowing") private var isOnboardingShowing = true
     
     @Environment(\.colorScheme) var colorScheme
@@ -283,19 +61,6 @@ struct ContentView: View {
     @State private var selectedColor: Color = .white
     @AppStorage("activeButton") var activeButton: String = ""
     
-    // Variabile globale per gestire il timer visivo attivo
-    @State private var animationWorkItem: DispatchWorkItem? = nil
-    // Variabile globale per la progress bar condivisa
-    @State private var progress: Double = 1.0
-  
-
-    // Funzione per resettare il timer e la progress bar, chiamata ad ogni pressione di qualsiasi tasto
-    private func resetAllTimers() {
-        animationWorkItem?.cancel()
-        animationWorkItem = nil
-        progress = 1.0
-    }
-
     var body: some View {
         ZStack(alignment: .topTrailing) {
             Color(colorScheme == .light ? Color(hex: "E5E5EA") : Color(hex: "1C1C1E"))
@@ -310,7 +75,6 @@ struct ContentView: View {
                 Spacer()
                 
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
-                    
                     // Button 1 - Doorbell
                     AnimationButton(
                         buttonID: "Button 1",
@@ -319,55 +83,39 @@ struct ContentView: View {
                         color: Color(hex: "E89D00"),
                         isActive: activeButton == "Doorbell",
                         anyButtonActive: activeButton != "",
-                        countdownProgress: activeButton == "Doorbell" ? $progress : nil
+                        countdownProgress: activeButton == "Doorbell" ? $timerManager.progress : nil
                     ) {
-                        // Resetta tutti i timer e imposta il progress a 1.0 senza animazione
-                        resetAllTimers()
+                        timerManager.cancel()
                         
                         if activeButton == "Doorbell" {
-                
                             homeManager.isCancelled = true
                             let lightsToTurnOff = homeManager.lights.filter {
                                 homeManager.selectedLights["Button 1"]?.contains($0.uniqueIdentifier) ?? false
                             }
-                            for light in lightsToTurnOff {
-                                homeManager.turnOff(light)
-                            }
+                            lightsToTurnOff.forEach { homeManager.turnOff($0) }
                             withAnimation(.easeInOut(duration: 0.5)) {
                                 selectedShape = "circle"
-                                
-                                
+                                activeButton = ""
                             }
-                            // Reset istantaneo del progress
-                            withAnimation(nil) { progress = 1.0 }
                             return
                         }
                         
                         homeManager.isCancelled = false
+                        UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
                         homeManager.flashLights(button: "Button 1", colorHue: 40)
                         withAnimation(.easeInOut(duration: 0.5)) {
                             activeButton = "Doorbell"
                             selectedShape = "circle.fill"
                             selectedColor = Color(hex: "E89D00")
                         }
-                        withAnimation(.linear(duration: 20)) {
-                            progress = 0.0
-                        }
-                        
-                        var workItem: DispatchWorkItem?
-                        workItem = DispatchWorkItem {
-                            if workItem?.isCancelled ?? false { return }
+                        timerManager.start(duration: 20) {
                             withAnimation(.easeInOut(duration: 0.5)) {
                                 selectedShape = "circle"
                                 activeButton = ""
                             }
-                            withAnimation(nil) { progress = 1.0 }
-                        }
-                        if let workItem = workItem {
-                            animationWorkItem = workItem
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 20, execute: workItem)
                         }
                     }
+                    .accessibilityHint("Press to flash lights")
                     
                     // Button 2 - Meal
                     AnimationButton(
@@ -377,49 +125,36 @@ struct ContentView: View {
                         color: Color(hex: "24709F"),
                         isActive: activeButton == "Meal",
                         anyButtonActive: activeButton != "",
-                        countdownProgress: activeButton == "Meal" ? $progress : nil
+                        countdownProgress: activeButton == "Meal" ? $timerManager.progress : nil
                     ) {
-                        resetAllTimers()
+                        timerManager.cancel()
                         
                         if activeButton == "Meal" {
                             homeManager.isCancelled = true
                             let lightsToTurnOff = homeManager.lights.filter {
                                 homeManager.selectedLights["Button 2"]?.contains($0.uniqueIdentifier) ?? false
                             }
-                            for light in lightsToTurnOff {
-                                homeManager.turnOff(light)
-                            }
+                            lightsToTurnOff.forEach { homeManager.turnOff($0) }
                             withAnimation(.easeInOut(duration: 0.5)) {
                                 selectedShape = "circle"
                                 activeButton = ""
                             }
-                            withAnimation(nil) { progress = 1.0 }
                             return
                         }
                         
                         homeManager.isCancelled = false
+                        UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
                         homeManager.flashLights(button: "Button 2", colorHue: 240)
                         withAnimation(.easeInOut(duration: 0.5)) {
                             activeButton = "Meal"
                             selectedShape = "square.fill"
                             selectedColor = Color(hex: "24709F")
                         }
-                        withAnimation(.linear(duration: 20)) {
-                            progress = 0.0
-                        }
-                        
-                        var workItem: DispatchWorkItem?
-                        workItem = DispatchWorkItem {
-                            if workItem?.isCancelled ?? false { return }
+                        timerManager.start(duration: 20) {
                             withAnimation(.easeInOut(duration: 0.5)) {
                                 selectedShape = "circle"
                                 activeButton = ""
                             }
-                            withAnimation(nil) { progress = 1.0 }
-                        }
-                        if let workItem = workItem {
-                            animationWorkItem = workItem
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 20, execute: workItem)
                         }
                     }
                     
@@ -431,49 +166,36 @@ struct ContentView: View {
                         color: Color(hex: "B23837"),
                         isActive: activeButton == "Alert",
                         anyButtonActive: activeButton != "",
-                        countdownProgress: activeButton == "Alert" ? $progress : nil
+                        countdownProgress: activeButton == "Alert" ? $timerManager.progress : nil
                     ) {
-                        resetAllTimers()
+                        timerManager.cancel()
                         
                         if activeButton == "Alert" {
                             homeManager.isCancelled = true
                             let lightsToTurnOff = homeManager.lights.filter {
                                 homeManager.selectedLights["Button 3"]?.contains($0.uniqueIdentifier) ?? false
                             }
-                            for light in lightsToTurnOff {
-                                homeManager.turnOff(light)
-                            }
+                            lightsToTurnOff.forEach { homeManager.turnOff($0) }
                             withAnimation(.easeInOut(duration: 0.5)) {
                                 selectedShape = "circle"
                                 activeButton = ""
                             }
-                            withAnimation(nil) { progress = 1.0 }
                             return
                         }
                         
                         homeManager.isCancelled = false
+                        UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
                         homeManager.flashLights(button: "Button 3", colorHue: 0)
                         withAnimation(.easeInOut(duration: 0.5)) {
                             activeButton = "Alert"
                             selectedShape = "triangle.fill"
                             selectedColor = Color(hex: "B23837")
                         }
-                        withAnimation(.linear(duration: 20)) {
-                            progress = 0.0
-                        }
-                        
-                        var workItem: DispatchWorkItem?
-                        workItem = DispatchWorkItem {
-                            if workItem?.isCancelled ?? false { return }
+                        timerManager.start(duration: 20) {
                             withAnimation(.easeInOut(duration: 0.5)) {
                                 selectedShape = "circle"
                                 activeButton = ""
                             }
-                            withAnimation(nil) { progress = 1.0 }
-                        }
-                        if let workItem = workItem {
-                            animationWorkItem = workItem
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 20, execute: workItem)
                         }
                     }
                     
@@ -485,53 +207,39 @@ struct ContentView: View {
                         color: Color(hex: "237F52"),
                         isActive: activeButton == "Approach",
                         anyButtonActive: activeButton != "",
-                        countdownProgress: activeButton == "Approach" ? $progress : nil
+                        countdownProgress: activeButton == "Approach" ? $timerManager.progress : nil
                     ) {
-                        resetAllTimers()
+                        timerManager.cancel()
                         
                         if activeButton == "Approach" {
                             homeManager.isCancelled = true
                             let lightsToTurnOff = homeManager.lights.filter {
                                 homeManager.selectedLights["Button 4"]?.contains($0.uniqueIdentifier) ?? false
                             }
-                            for light in lightsToTurnOff {
-                                homeManager.turnOff(light)
-                            }
+                            lightsToTurnOff.forEach { homeManager.turnOff($0) }
                             withAnimation(.easeInOut(duration: 0.5)) {
                                 selectedShape = "circle"
                                 activeButton = ""
                             }
-                            withAnimation(nil) { progress = 1.0 }
                             return
                         }
                         
                         homeManager.isCancelled = false
+                        UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
                         homeManager.flashLights(button: "Button 4", colorHue: 120)
                         withAnimation(.easeInOut(duration: 0.5)) {
                             activeButton = "Approach"
                             selectedShape = "pentagon.fill"
                             selectedColor = Color(hex: "237F52")
                         }
-                        withAnimation(.linear(duration: 20)) {
-                            progress = 0.0
-                        }
-                        
-                        var workItem: DispatchWorkItem?
-                        workItem = DispatchWorkItem {
-                            if workItem?.isCancelled ?? false { return }
+                        timerManager.start(duration: 20) {
                             withAnimation(.easeInOut(duration: 0.5)) {
                                 selectedShape = "circle"
                                 activeButton = ""
                             }
-                            withAnimation(nil) { progress = 1.0 }
-                        }
-                        if let workItem = workItem {
-                            animationWorkItem = workItem
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 20, execute: workItem)
                         }
                     }
                 }
-
                 .padding()
             }
             .padding(.top, 20)
@@ -539,10 +247,65 @@ struct ContentView: View {
                 OnboardingView(isOnboardingShowing: $isOnboardingShowing)
             }
         }
+        // Listener per la notifica Doorbell (Button 1)
+        .onReceive(NotificationCenter.default.publisher(for: .doorbellActivated)) { _ in
+            withAnimation(.easeInOut(duration: 0.5)) {
+                activeButton = "Doorbell"
+                selectedShape = "circle.fill"
+                selectedColor = Color(hex: "E89D00")
+            }
+            timerManager.start(duration: 20) {
+                withAnimation(.easeInOut(duration: 0.5)) {
+                    selectedShape = "circle"
+                    activeButton = ""
+                }
+            }
+        }
+        // Listener per la notifica Meal (Button 2)
+        .onReceive(NotificationCenter.default.publisher(for: .mealActivated)) { _ in
+            withAnimation(.easeInOut(duration: 0.5)) {
+                activeButton = "Meal"
+                selectedShape = "square.fill"
+                selectedColor = Color(hex: "24709F")
+            }
+            timerManager.start(duration: 20) {
+                withAnimation(.easeInOut(duration: 0.5)) {
+                    selectedShape = "circle"
+                    activeButton = ""
+                }
+            }
+        }
+        // Listener per la notifica Alert (Button 3)
+        .onReceive(NotificationCenter.default.publisher(for: .alertActivated)) { _ in
+            withAnimation(.easeInOut(duration: 0.5)) {
+                activeButton = "Alert"
+                selectedShape = "triangle.fill"
+                selectedColor = Color(hex: "B23837")
+            }
+            timerManager.start(duration: 20) {
+                withAnimation(.easeInOut(duration: 0.5)) {
+                    selectedShape = "circle"
+                    activeButton = ""
+                }
+            }
+        }
+        // Listener per la notifica Approach (Button 4)
+        .onReceive(NotificationCenter.default.publisher(for: .approachActivated)) { _ in
+            withAnimation(.easeInOut(duration: 0.5)) {
+                activeButton = "Approach"
+                selectedShape = "pentagon.fill"
+                selectedColor = Color(hex: "237F52")
+            }
+            timerManager.start(duration: 20) {
+                withAnimation(.easeInOut(duration: 0.5)) {
+                    selectedShape = "circle"
+                    activeButton = ""
+                }
+            }
+        }
     }
 }
 
-// MARK: - Anteprima
 #Preview {
     ContentView()
 }
