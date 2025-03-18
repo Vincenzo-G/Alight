@@ -2,7 +2,7 @@ import SwiftUI
 import HomeKit
 
 struct SelectLightsView: View {
-    @ObservedObject private var homeManager = HomeManager()
+    @ObservedObject private var homeManager = HomeManager.shared
     let button: String // Determines which button's lights are being selected
     
     var allLightsSelected: Bool {

@@ -4,6 +4,7 @@
 //
 //  Created by Vincenzo Gerelli on 12/03/25.
 //
+
 import SwiftUI
 
 // Estensione per creare un Color da una stringa esadecimale
@@ -55,140 +56,22 @@ struct GradientOverlay: View {
     }
 }
 
-struct ContentView: View {
-    
-    @StateObject private var homeManager = HomeManager()
-    @AppStorage("isOnboardingShowing") private var isOnboardingShowing = true
-    
-    @Environment(\.colorScheme) var colorScheme
-    @State private var selectedShape: String = "circle"
-    @State private var selectedColor: Color = .white
-    @State private var activeButton: String? = nil
-    
-    var body: some View {
-        ZStack(alignment: .topTrailing) {
-            Color(colorScheme == .light ? Color(hex: "E5E5EA") : Color(hex: "1C1C1E"))
-                .ignoresSafeArea()
-            
-            VStack {
-                Spacer()
-                
-                PulsingShapeView(shapeSymbol: selectedShape, color: selectedColor)
-                    .frame(width: 300, height: 300)
-                
-                Spacer()
-                
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
-                    
-                    AnimationButton(buttonID: "Button 1",
-                                    primaryIcon: "bell.fill",
-                                    shapeIcon: "circle.fill",
-                                    color: Color(hex: "E89D00"),
-                                    isActive: activeButton == "Doorbell",
-                                    anyButtonActive: activeButton != nil) {
-                        guard activeButton == nil else { return }
-                        homeManager.flashLights(button: "Button 1", cycles: 3, colorHue: 40)
-                        withAnimation(.easeInOut(duration: 0.5)) {
-                            activeButton = "Doorbell"
-                            selectedShape = "circle.fill"
-                            selectedColor = Color(hex: "E89D00")
-                        }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 20) {
-                            withAnimation(.easeInOut(duration: 0.5)) {
-                                selectedShape = "circle"
-                                activeButton = nil
-                            }
-                        }
-                    }
-                    
-                    AnimationButton(buttonID: "Button 2",
-                                    primaryIcon: "fork.knife",
-                                    shapeIcon: "square.fill",
-                                    color: Color(hex: "24709F"),
-                                    isActive: activeButton == "Meal",
-                                    anyButtonActive: activeButton != nil) {
-                        guard activeButton == nil else { return }
-                        homeManager.flashLights(button: "Button 2", cycles: 3, colorHue: 240)
-                        withAnimation(.easeInOut(duration: 0.5)) {
-                            activeButton = "Meal"
-                            selectedShape = "square.fill"
-                            selectedColor = Color(hex: "24709F")
-                        }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 20) {
-                            withAnimation(.easeInOut(duration: 0.5)) {
-                                selectedShape = "circle"
-                                activeButton = nil
-                            }
-                        }
-                    }
-                    
-                    AnimationButton(buttonID: "Button 3",
-                                    primaryIcon: "light.beacon.max.fill",
-                                    shapeIcon: "triangle.fill",
-                                    color: Color(hex: "B23837"),
-                                    isActive: activeButton == "Alert",
-                                    anyButtonActive: activeButton != nil) {
-                        guard activeButton == nil else { return }
-                        homeManager.flashLights(button: "Button 3", cycles: 3, colorHue: 0)
-                        withAnimation(.easeInOut(duration: 0.5)) {
-                            activeButton = "Alert"
-                            selectedShape = "triangle.fill"
-                            selectedColor = Color(hex: "B23837")
-                        }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 20) {
-                            withAnimation(.easeInOut(duration: 0.5)) {
-                                selectedShape = "circle"
-                                activeButton = nil
-                            }
-                        }
-                    }
-                    
-                    AnimationButton(buttonID: "Button 4",
-                                    primaryIcon: "figure.walk",
-                                    shapeIcon: "pentagon.fill",
-                                    color: Color(hex: "237F52"),
-                                    isActive: activeButton == "Approach",
-                                    anyButtonActive: activeButton != nil) {
-                        guard activeButton == nil else { return }
-                        homeManager.flashLights(button: "Button 4", cycles: 3, colorHue: 120)
-                        withAnimation(.easeInOut(duration: 0.5)) {
-                            activeButton = "Approach"
-                            selectedShape = "pentagon.fill"
-                            selectedColor = Color(hex: "237F52")
-                        }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 20) {
-                            withAnimation(.easeInOut(duration: 0.5)) {
-                                selectedShape = "circle"
-                                activeButton = nil
-                            }
-                        }
-                    }
-                }
-                .padding()
-            }
-            .padding(.top, 40)
-            .sheet(isPresented: $isOnboardingShowing) {
-                OnboardingView(isOnboardingShowing: $isOnboardingShowing)
-            }
-        }
-    }
-}
-
 // Vista per la forma centrale
 struct PulsingShapeView: View {
     let shapeSymbol: String
     let color: Color
     @State private var pulse = false
-    
+
     var body: some View {
-        Group {
+        ZStack {
             if shapeSymbol == "circle" {
-                // Stato idle: cerchio statico con stroke di 10, senza animazione
+                // Stato idle: il cerchio che, in uscita, si riduce a zero
                 Circle()
-                    .stroke(Color(hex: "BDBDBD"), lineWidth: 10)
-                    .aspectRatio(contentMode: .fit)
+                    .stroke(Color(hex: "BDBDBD"), lineWidth: 15)
+                    .frame(width: 330, height: 330)
+                    .transition(.asymmetric(insertion: .scale, removal: .scale))
             } else {
-                // Stato animato: l'immagine pulsa, con overlay di pulse e overlay gradient
+                // Stato attivo: la nuova forma che appare crescendo da zero
                 Image(systemName: shapeSymbol)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
@@ -197,9 +80,14 @@ struct PulsingShapeView: View {
                     .shadow(color: color.opacity(pulse ? 0.9 : 0.3), radius: pulse ? 20 : 10)
                     .overlay(PulseAnimationOverlay(shapeSymbol: shapeSymbol, color: color))
                     .overlay(GradientOverlay(shapeSymbol: shapeSymbol, baseColor: color, pulse: pulse))
-                    .onAppear { startAnimation() }
+                    .transition(.asymmetric(insertion: .scale, removal: .scale))
+                    .onAppear {
+                        startAnimation()
+                    }
             }
         }
+        // Animazione della transizione basata sul cambiamento di shapeSymbol
+        .animation(.easeInOut(duration: 0.5), value: shapeSymbol)
     }
     
     private func startAnimation() {
@@ -209,6 +97,7 @@ struct PulsingShapeView: View {
         }
     }
 }
+
 
 // View che crea l'effetto pulse overlay, utilizzando lo stesso SF Symbol e colore
 struct PulseAnimationOverlay: View {
@@ -247,7 +136,6 @@ struct AnimationButton: View {
     @State private var isOptionsShowing = false
     @State private var buttonName: String
 
-    // Default names for each button
     private let defaultNames: [String: String] = [
         "Button 1": "Doorbell",
         "Button 2": "Meal",
@@ -264,19 +152,37 @@ struct AnimationButton: View {
         self.anyButtonActive = anyButtonActive
         self.action = action
         
-        // Check UserDefaults or use default name
+        // Controlla UserDefaults o usa il nome di default
         let storedName = UserDefaults.standard.string(forKey: "buttonName_\(buttonID)")
             ?? defaultNames[buttonID]
-            ?? buttonID
+            ?? buttonID  // Fallback se non esiste un default
         _buttonName = State(initialValue: storedName)
     }
     
+    // Se un pulsante non è attivo e un altro è attivo, il testo diventa grigio
     var dynamicTextColor: Color {
-        isActive ? .white : (colorScheme == .dark ? .white : .black)
+        if anyButtonActive && !isActive {
+            return Color.gray
+        } else {
+            return isActive ? .white : (colorScheme == .dark ? .white : .black)
+        }
+    }
+    
+    // Se un pulsante non è attivo e un altro è attivo, anche l'icona della forma diventa grigia
+    var dynamicShapeIconColor: Color {
+        if anyButtonActive && !isActive {
+            return Color.gray
+        } else {
+            return color
+        }
     }
     
     var dynamicButtonBackground: Color {
-        isActive ? color : (colorScheme == .light ? Color(hex: "FFFFFF") : Color(UIColor.systemGray4))
+        if anyButtonActive && !isActive {
+            return Color.gray.opacity(0.3)
+        } else {
+            return isActive ? color : (colorScheme == .light ? Color(hex: "FFFFFF") : Color(UIColor.systemGray4))
+        }
     }
     
     var body: some View {
@@ -288,7 +194,8 @@ struct AnimationButton: View {
                         .foregroundColor(dynamicTextColor)
                     Spacer()
                     
-                    // Three Dots Button (Opens OptionsView)
+                    // Pulsante "Three Dots" per aprire OptionsView
+
                     Button(action: {
                         isOptionsShowing = true
                     }) {
@@ -302,7 +209,7 @@ struct AnimationButton: View {
                 
                 Spacer()
                 
-                // **Bottom Section: Title + Shape Icon**
+                // Sezione inferiore: titolo + icona della forma
                 HStack {
                     Text(buttonName)
                         .font(.headline)
@@ -310,7 +217,7 @@ struct AnimationButton: View {
                     Spacer()
                     Image(systemName: shapeIcon)
                         .font(.title)
-                        .foregroundColor(color)
+                        .foregroundColor(dynamicShapeIconColor)
                 }
             }
             .padding()
@@ -320,6 +227,7 @@ struct AnimationButton: View {
         }
         .disabled(anyButtonActive && !isActive)
         .sheet(isPresented: $isOptionsShowing, onDismiss: {
+
             // Refresh button name after closing OptionsView
             buttonName = UserDefaults.standard.string(forKey: "buttonName_\(buttonID)")
                 ?? defaultNames[buttonID]
@@ -331,6 +239,185 @@ struct AnimationButton: View {
         }
     }
 }
+
+// Vista principale
+struct ContentView: View {
+    
+    @StateObject private var homeManager = HomeManager.shared
+    @AppStorage("isOnboardingShowing") private var isOnboardingShowing = true
+    
+    @Environment(\.colorScheme) var colorScheme
+    @State private var selectedShape: String = "circle"
+    @State private var selectedColor: Color = .white
+    @AppStorage("activeButton") var activeButton: String = ""
+    @State private var animationWorkItem: DispatchWorkItem? = nil  // Variabile per gestire il blocco programmato
+    
+    //@AppStorage("isButton1Triggered") private var isButton1Triggered = false
+    
+    var body: some View {
+        ZStack(alignment: .topTrailing) {
+            Color(colorScheme == .light ? Color(hex: "E5E5EA") : Color(hex: "1C1C1E"))
+                .ignoresSafeArea()
+            
+            VStack {
+                Spacer()
+                
+                PulsingShapeView(shapeSymbol: selectedShape, color: selectedColor)
+                    .frame(width: 300, height: 300)
+                
+                Spacer()
+                
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+                    
+                    // Pulsante 1
+                    AnimationButton(buttonID: "Button 1",
+                                    primaryIcon: "bell.fill",
+                                    shapeIcon: "circle.fill",
+                                    color: Color(hex: "E89D00"),
+                                    isActive: activeButton == "Doorbell",
+                                    anyButtonActive: activeButton != "") {
+                        if activeButton == "Doorbell" {
+                            // Se il pulsante attivo viene ripremuto, annulla il blocco programmato e torna in stato idle
+                            animationWorkItem?.cancel()
+                            animationWorkItem = nil
+                            withAnimation(.easeInOut(duration: 0.5)) {
+                                selectedShape = "circle"
+                                activeButton = ""
+                            }
+                            return
+                        }
+                        
+                        // Attiva l'animazione
+                        homeManager.flashLights(button: "Button 1", colorHue: 40)
+                        withAnimation(.easeInOut(duration: 0.5)) {
+                            activeButton = "Doorbell"
+                            selectedShape = "circle.fill"
+                            selectedColor = Color(hex: "E89D00")
+                        }
+                        
+                        let workItem = DispatchWorkItem {
+                            withAnimation(.easeInOut(duration: 0.5)) {
+                                selectedShape = "circle"
+                                activeButton = ""
+                            }
+                        }
+                        animationWorkItem = workItem
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 20, execute: workItem)
+                    }
+                    
+                    // Pulsante 2
+                    AnimationButton(buttonID: "Button 2",
+                                    primaryIcon: "fork.knife",
+                                    shapeIcon: "square.fill",
+                                    color: Color(hex: "24709F"),
+                                    isActive: activeButton == "Meal",
+                                    anyButtonActive: activeButton != "") {
+                        if activeButton == "Meal" {
+                            animationWorkItem?.cancel()
+                            animationWorkItem = nil
+                            withAnimation(.easeInOut(duration: 0.5)) {
+                                selectedShape = "circle"
+                                activeButton = ""
+                            }
+                            return
+                        }
+                        
+                        homeManager.flashLights(button: "Button 2", colorHue: 240)
+                        withAnimation(.easeInOut(duration: 0.5)) {
+                            activeButton = "Meal"
+                            selectedShape = "square.fill"
+                            selectedColor = Color(hex: "24709F")
+                        }
+                        
+                        let workItem = DispatchWorkItem {
+                            withAnimation(.easeInOut(duration: 0.5)) {
+                                selectedShape = "circle"
+                                activeButton = ""
+                            }
+                        }
+                        animationWorkItem = workItem
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 20, execute: workItem)
+                    }
+                    
+                    // Pulsante 3
+                    AnimationButton(buttonID: "Button 3",
+                                    primaryIcon: "light.beacon.max.fill",
+                                    shapeIcon: "triangle.fill",
+                                    color: Color(hex: "B23837"),
+                                    isActive: activeButton == "Alert",
+                                    anyButtonActive: activeButton != "") {
+                        if activeButton == "Alert" {
+                            animationWorkItem?.cancel()
+                            animationWorkItem = nil
+                            withAnimation(.easeInOut(duration: 0.5)) {
+                                selectedShape = "circle"
+                                activeButton = ""
+                            }
+                            return
+                        }
+                        
+                        homeManager.flashLights(button: "Button 3", colorHue: 0)
+                        withAnimation(.easeInOut(duration: 0.5)) {
+                            activeButton = "Alert"
+                            selectedShape = "triangle.fill"
+                            selectedColor = Color(hex: "B23837")
+                        }
+                        
+                        let workItem = DispatchWorkItem {
+                            withAnimation(.easeInOut(duration: 0.5)) {
+                                selectedShape = "circle"
+                                activeButton = ""
+                            }
+                        }
+                        animationWorkItem = workItem
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 20, execute: workItem)
+                    }
+                    
+                    // Pulsante 4
+                    AnimationButton(buttonID: "Button 4",
+                                    primaryIcon: "figure.walk",
+                                    shapeIcon: "pentagon.fill",
+                                    color: Color(hex: "237F52"),
+                                    isActive: activeButton == "Approach",
+                                    anyButtonActive: activeButton != "") {
+                        if activeButton == "Approach" {
+                            animationWorkItem?.cancel()
+                            animationWorkItem = nil
+                            withAnimation(.easeInOut(duration: 0.5)) {
+                                selectedShape = "circle"
+                                activeButton = ""
+                            }
+                            return
+                        }
+                        
+                        homeManager.flashLights(button: "Button 4", colorHue: 120)
+                        withAnimation(.easeInOut(duration: 0.5)) {
+                            activeButton = "Approach"
+                            selectedShape = "pentagon.fill"
+                            selectedColor = Color(hex: "237F52")
+                        }
+                        
+                        let workItem = DispatchWorkItem {
+                            withAnimation(.easeInOut(duration: 0.5)) {
+                                selectedShape = "circle"
+                                activeButton = ""
+                            }
+                        }
+                        animationWorkItem = workItem
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 20, execute: workItem)
+                    }
+                }
+                .padding()
+            }
+            .padding(.top, 20)
+            .sheet(isPresented: $isOnboardingShowing) {
+                OnboardingView(isOnboardingShowing: $isOnboardingShowing)
+            }
+        }
+    }
+}
+
+
 
 #Preview {
     ContentView()
