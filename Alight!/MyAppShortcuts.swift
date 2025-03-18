@@ -14,9 +14,9 @@ struct MyAppShortcuts: AppShortcutsProvider {
             AppShortcut(
                 intent: ToggleButton1Intent(),
                 phrases: [
-                    "Tap the first button in \(.applicationName)",
-                    "Ring the doorbell in \(.applicationName)",
-                    "Turn on the circle in \(.applicationName)"
+                    "Ring the doorbell in \(.applicationName)"
+                    
+                    
                 ],
                 shortTitle: "Doorbell",
                 systemImageName: "bell.fill"
@@ -26,9 +26,7 @@ struct MyAppShortcuts: AppShortcutsProvider {
             AppShortcut(
                 intent: ToggleButton2Intent(),
                 phrases: [
-                    "Tap the second button in \(.applicationName)",
-                    "Time to eat with \(.applicationName)",
-                    "Turn on the square in \(.applicationName)"
+                    "Time to eat with \(.applicationName)"
                 ],
                 shortTitle: "Meal",
                 systemImageName: "fork.knife"
@@ -38,9 +36,9 @@ struct MyAppShortcuts: AppShortcutsProvider {
             AppShortcut(
                 intent: ToggleButton3Intent(),
                 phrases: [
-                    "Tap the third button in \(.applicationName)",
-                    "Activate alert in \(.applicationName)",
-                    "Turn on the triangle in \(.applicationName)"
+             
+                    "Activate alert in \(.applicationName)"
+                    
                 ],
                 shortTitle: "Alert",
                 systemImageName: "light.beacon.max.fill"
@@ -50,9 +48,9 @@ struct MyAppShortcuts: AppShortcutsProvider {
             AppShortcut(
                 intent: ToggleButton4Intent(),
                 phrases: [
-                    "Tap the fourth button in \(.applicationName)",
-                    "Someone is approaching in \(.applicationName)",
-                    "Turn on the pentagon in \(.applicationName)"
+                   
+                    "Someone is approaching in \(.applicationName)"
+                  
                 ],
                 shortTitle: "Approach",
                 systemImageName: "figure.walk"
