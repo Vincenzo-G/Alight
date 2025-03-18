@@ -158,11 +158,11 @@ class HomeManager: NSObject, ObservableObject, HMHomeManagerDelegate {
         }
     }
     
-    
+ 
     func turnOff(_ light: HMAccessory) {
         guard let powerCharacteristic = light.services
-            .flatMap({ $0.characteristics })
-            .first(where: { $0.characteristicType == HMCharacteristicTypePowerState }) else {
+                .flatMap({ $0.characteristics })
+                .first(where: { $0.characteristicType == HMCharacteristicTypePowerState }) else {
             print("⚠️ Nessuna caratteristica di accensione trovata per \(light.name)")
             return
         }
@@ -175,7 +175,9 @@ class HomeManager: NSObject, ObservableObject, HMHomeManagerDelegate {
             }
         }
     }
-    
+
+    var isCancelled = false // Variabile di controllo a livello di classe o contesto
+
     
     
     func flashLights(button: String, brightness: Double = 100, saturation: Double = 100, colorHue: Double) {
@@ -201,6 +203,13 @@ class HomeManager: NSObject, ObservableObject, HMHomeManagerDelegate {
             let startTime = Date()
             
             func performToggle() {
+                if isCancelled {
+                    // Se il processo viene annullato, spegni la luce e interrompi il ciclo
+                    turnOff(light)
+                    print("❌ Flashing cancelled for \(light.name)")
+                    return
+                }
+                
                 let elapsedTime = Date().timeIntervalSince(startTime)
                 if elapsedTime >= duration {
                     // Alla fine del lampeggiamento, richiamo la funzione turnOff per spegnere la luce
@@ -208,6 +217,7 @@ class HomeManager: NSObject, ObservableObject, HMHomeManagerDelegate {
                     print("✅ Flashing completed for \(light.name) in \(button) - Light turned off")
                     return
                 }
+                
                 toggleLight(light)
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
                     performToggle()
@@ -223,51 +233,49 @@ class HomeManager: NSObject, ObservableObject, HMHomeManagerDelegate {
     }
     
     
-    
-    
-    //    // Funzione per far lampeggiare tutte le luci della casa
-    //    func flashLights(button: String, cycles: Int, brightness: Double = 100, saturation: Double = 100, colorHue: Double) {
-    //        currentAction = "Flashing lights for \(button)"
-    //
-    //        // Load selected lights for the specific button
-    //        loadSelectedLights()
-    //
-    //        // Get the selected lights for this button
-    //        let lightsToFlash = lights.filter { selectedLights[button]?.contains($0.uniqueIdentifier) ?? false }
-    //
-    //        guard !lightsToFlash.isEmpty else {
-    //            print("⚠️ No selected lights to flash for \(button)")
-    //            return
-    //        }
-    //
-    //        for light in lightsToFlash {
-    //            setHue(for: light, hue: colorHue)
-    //            setBrightness(for: light, brightness: brightness)
-    //            setSaturation(for: light, saturation: saturation)
-    //
-    //            let totalToggles = cycles * 2
-    //            var toggleCount = 0
-    //
-    //            func performToggle() {
-    //                guard toggleCount < totalToggles else {
-    //                    print("✅ Flashing completed for \(light.name) in \(button)")
-    //                    return
-    //                }
-    //                toggleLight(light)
-    //                toggleCount += 1
-    //                DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-    //                    performToggle()
-    //                }
-    //            }
-    //
-    //            performToggle()
-    //        }
-    //
-    //        DispatchQueue.main.asyncAfter(deadline: .now() + (Double(cycles) * 2) + 2) {
-    //            self.currentAction = "Idle"
-    //        }
-    //    }
-    
+//    // Funzione per far lampeggiare tutte le luci della casa
+//    func flashLights(button: String, cycles: Int, brightness: Double = 100, saturation: Double = 100, colorHue: Double) {
+//        currentAction = "Flashing lights for \(button)"
+//        
+//        // Load selected lights for the specific button
+//        loadSelectedLights()
+//        
+//        // Get the selected lights for this button
+//        let lightsToFlash = lights.filter { selectedLights[button]?.contains($0.uniqueIdentifier) ?? false }
+//        
+//        guard !lightsToFlash.isEmpty else {
+//            print("⚠️ No selected lights to flash for \(button)")
+//            return
+//        }
+//
+//        for light in lightsToFlash {
+//            setHue(for: light, hue: colorHue)
+//            setBrightness(for: light, brightness: brightness)
+//            setSaturation(for: light, saturation: saturation)
+//
+//            let totalToggles = cycles * 2
+//            var toggleCount = 0
+//
+//            func performToggle() {
+//                guard toggleCount < totalToggles else {
+//                    print("✅ Flashing completed for \(light.name) in \(button)")
+//                    return
+//                }
+//                toggleLight(light)
+//                toggleCount += 1
+//                DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+//                    performToggle()
+//                }
+//            }
+//
+//            performToggle()
+//        }
+//
+//        DispatchQueue.main.asyncAfter(deadline: .now() + (Double(cycles) * 2) + 2) {
+//            self.currentAction = "Idle"
+//        }
+//    }
+
     
     
 }
