@@ -20,7 +20,7 @@ struct ToggleButton1Intent: AppIntent {
         homeManager.flashLights(button: "Button 1", colorHue: 40)
         activeButton = "Doorbell"
 
-        return .result(dialog: "Doorbell button activated.")
+        return .result(dialog: "First button activated.")
     }
 }
 
@@ -38,7 +38,7 @@ struct ToggleButton2Intent: AppIntent {
         homeManager.flashLights(button: "Button 2", colorHue: 240)
         activeButton = "Meal"
 
-        return .result(dialog: "Meal button activated.")
+        return .result(dialog: "Second button activated.")
     }
 }
 
@@ -54,7 +54,7 @@ struct ToggleButton3Intent: AppIntent {
         homeManager.flashLights(button: "Button 3", colorHue: 0)
         activeButton = "Alert"
 
-        return .result(dialog: "Alert button activated.")
+        return .result(dialog: "Third button activated.")
     }
 }
 
@@ -70,6 +70,6 @@ struct ToggleButton4Intent: AppIntent {
         homeManager.flashLights(button: "Button 4", colorHue: 120)
         activeButton = "Approach"
 
-        return .result(dialog: "Approach button activated.")
+        return .result(dialog: "Fourth button activated.")
     }
 }
