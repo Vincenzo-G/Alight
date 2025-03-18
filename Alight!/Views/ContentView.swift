@@ -320,8 +320,6 @@ struct ContentView: View {
     
     //@AppStorage("isButton1Triggered") private var isButton1Triggered = false
     
-    @State private var activeButton: String? = nil
-    @State private var animationWorkItem: DispatchWorkItem? = nil
     @State private var progress: Double = 1.0  // Barra piena (1.0 = piena, 0.0 = vuota)
 
     var body: some View {
@@ -347,7 +345,7 @@ struct ContentView: View {
                         shapeIcon: "circle.fill",
                         color: Color(hex: "E89D00"),
                         isActive: activeButton == "Doorbell",
-                        anyButtonActive: activeButton != nil,
+                        anyButtonActive: activeButton != "",
                         countdownProgress: activeButton == "Doorbell" ? $progress : nil
                     ) {
                         // Se il pulsante è già attivo, annulla l’animazione, resetta l’UI
@@ -409,7 +407,8 @@ struct ContentView: View {
                                     shapeIcon: "square.fill",
                                     color: Color(hex: "24709F"),
                                     isActive: activeButton == "Meal",
-                                    anyButtonActive: activeButton != "") {
+                                    anyButtonActive: activeButton != "",
+                                    countdownProgress: activeButton == "Meal" ? $progress : nil) {
                         if activeButton == "Meal" {
                             animationWorkItem?.cancel()
                             animationWorkItem = nil
@@ -464,7 +463,8 @@ struct ContentView: View {
                                     shapeIcon: "triangle.fill",
                                     color: Color(hex: "B23837"),
                                     isActive: activeButton == "Alert",
-                                    anyButtonActive: activeButton != "") {
+                                    anyButtonActive: activeButton != "",
+                                    countdownProgress: activeButton == "Alert" ? $progress : nil) {
                         if activeButton == "Alert" {
                             animationWorkItem?.cancel()
                             animationWorkItem = nil
@@ -519,7 +519,8 @@ struct ContentView: View {
                                     shapeIcon: "pentagon.fill",
                                     color: Color(hex: "237F52"),
                                     isActive: activeButton == "Approach",
-                                    anyButtonActive: activeButton != "") {
+                                    anyButtonActive: activeButton != "",
+                                    countdownProgress: activeButton == "Approach" ? $progress : nil) {
                         if activeButton == "Approach" {
                             animationWorkItem?.cancel()
                             animationWorkItem = nil
