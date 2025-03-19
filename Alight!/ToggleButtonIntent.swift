@@ -37,14 +37,20 @@ struct ToggleButton2Intent: AppIntent {
     static var description = IntentDescription("Toggles the 'Meal' button in the app.")
     static var openAppWhenRun: Bool = true
     @AppStorage("activeButton") private var activeButton = ""
-
-    
     
     func perform() async throws -> some IntentResult & ProvidesDialog {
         let homeManager = HomeManager.shared
-        homeManager.flashLights(button: "Button 2", colorHue: 240)
-        activeButton = "Meal"
-
+        
+        await MainActor.run {
+            withAnimation(.easeInOut(duration: 0.5)) {
+                homeManager.flashLights(button: "Button 2", colorHue: 240)
+                activeButton = "Meal"
+            }
+        }
+        
+        // Post notification to trigger UI animation in ContentView
+        NotificationCenter.default.post(name: .mealActivated, object: nil)
+        
         return .result(dialog: "Second button activated.")
     }
 }
@@ -55,12 +61,20 @@ struct ToggleButton3Intent: AppIntent {
     static var description = IntentDescription("Toggles the 'Alert' button in the app.")
     static var openAppWhenRun: Bool = true
     @AppStorage("activeButton") private var activeButton = ""
-
+    
     func perform() async throws -> some IntentResult & ProvidesDialog {
         let homeManager = HomeManager.shared
-        homeManager.flashLights(button: "Button 3", colorHue: 0)
-        activeButton = "Alert"
-
+        
+        await MainActor.run {
+            withAnimation(.easeInOut(duration: 0.5)) {
+                homeManager.flashLights(button: "Button 3", colorHue: 0)
+                activeButton = "Alert"
+            }
+        }
+        
+        // Post notification to trigger UI animation in ContentView
+        NotificationCenter.default.post(name: .alertActivated, object: nil)
+        
         return .result(dialog: "Third button activated.")
     }
 }
@@ -71,12 +85,20 @@ struct ToggleButton4Intent: AppIntent {
     static var description = IntentDescription("Toggles the 'Approach' button in the app.")
     static var openAppWhenRun: Bool = true
     @AppStorage("activeButton") private var activeButton = ""
-
+    
     func perform() async throws -> some IntentResult & ProvidesDialog {
         let homeManager = HomeManager.shared
-        homeManager.flashLights(button: "Button 4", colorHue: 120)
-        activeButton = "Approach"
-
+        
+        await MainActor.run {
+            withAnimation(.easeInOut(duration: 0.5)) {
+                homeManager.flashLights(button: "Button 4", colorHue: 120)
+                activeButton = "Approach"
+            }
+        }
+        
+        // Post notification to trigger UI animation in ContentView
+        NotificationCenter.default.post(name: .approachActivated, object: nil)
+        
         return .result(dialog: "Fourth button activated.")
     }
 }
