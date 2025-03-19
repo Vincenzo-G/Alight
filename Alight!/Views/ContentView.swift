@@ -11,9 +11,7 @@
 //
 //  Created by Vincenzo Gerelli on 12/03/25.
 //
-
 import SwiftUI
-
 
 extension Color {
     init(hex: String) {
@@ -41,8 +39,6 @@ extension Color {
     }
 }
 
-import SwiftUI
-
 extension Notification.Name {
     static let doorbellActivated = Notification.Name("doorbellActivated")
     static let mealActivated = Notification.Name("mealActivated")
@@ -61,6 +57,13 @@ struct ContentView: View {
     @State private var selectedColor: Color = .white
     @AppStorage("activeButton") var activeButton: String = ""
     
+    // Utilizzo di @AppStorage per le icone: ogni volta che vengono modificate in UserDefaults (ad esempio da OptionsView)
+    // queste proprietà si aggiornano automaticamente nella ContentView.
+    @AppStorage("buttonIcon_Button 1") private var button1Icon: String = "bell.fill"
+    @AppStorage("buttonIcon_Button 2") private var button2Icon: String = "fork.knife"
+    @AppStorage("buttonIcon_Button 3") private var button3Icon: String = "light.beacon.max.fill"
+    @AppStorage("buttonIcon_Button 4") private var button4Icon: String = "figure.walk"
+    
     var body: some View {
         ZStack(alignment: .topTrailing) {
             Color(colorScheme == .light ? Color(hex: "E5E5EA") : Color(hex: "1C1C1E"))
@@ -78,7 +81,7 @@ struct ContentView: View {
                     // Button 1 - Doorbell
                     AnimationButton(
                         buttonID: "Button 1",
-                        primaryIcon: "bell.fill",
+                        primaryIcon: button1Icon,
                         shapeIcon: "circle.fill",
                         color: Color(hex: "E89D00"),
                         isActive: activeButton == "Doorbell",
@@ -120,7 +123,7 @@ struct ContentView: View {
                     // Button 2 - Meal
                     AnimationButton(
                         buttonID: "Button 2",
-                        primaryIcon: "fork.knife",
+                        primaryIcon: button2Icon,
                         shapeIcon: "square.fill",
                         color: Color(hex: "24709F"),
                         isActive: activeButton == "Meal",
@@ -161,7 +164,7 @@ struct ContentView: View {
                     // Button 3 - Alert
                     AnimationButton(
                         buttonID: "Button 3",
-                        primaryIcon: "light.beacon.max.fill",
+                        primaryIcon: button3Icon,
                         shapeIcon: "triangle.fill",
                         color: Color(hex: "B23837"),
                         isActive: activeButton == "Alert",
@@ -202,7 +205,7 @@ struct ContentView: View {
                     // Button 4 - Approach
                     AnimationButton(
                         buttonID: "Button 4",
-                        primaryIcon: "figure.walk",
+                        primaryIcon: button4Icon,
                         shapeIcon: "pentagon.fill",
                         color: Color(hex: "237F52"),
                         isActive: activeButton == "Approach",
