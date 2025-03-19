@@ -14,7 +14,7 @@ struct MyAppShortcuts: AppShortcutsProvider {
             AppShortcut(
                 intent: ToggleButton1Intent(),
                 phrases: [
-                    "Ring the doorbell in \(.applicationName)"
+                    "Button 1 in \(.applicationName)"
                     
                     
                 ],
@@ -26,7 +26,7 @@ struct MyAppShortcuts: AppShortcutsProvider {
             AppShortcut(
                 intent: ToggleButton2Intent(),
                 phrases: [
-                    "Time to eat with \(.applicationName)"
+                    "Button 2 in \(.applicationName)"
                 ],
                 shortTitle: "Meal",
                 systemImageName: "fork.knife"
@@ -37,7 +37,7 @@ struct MyAppShortcuts: AppShortcutsProvider {
                 intent: ToggleButton3Intent(),
                 phrases: [
              
-                    "Activate alert in \(.applicationName)"
+                    "Button 3 in \(.applicationName)"
                     
                 ],
                 shortTitle: "Alert",
@@ -49,7 +49,7 @@ struct MyAppShortcuts: AppShortcutsProvider {
                 intent: ToggleButton4Intent(),
                 phrases: [
                    
-                    "Someone is approaching in \(.applicationName)"
+                    "Button 4 in \(.applicationName)"
                   
                 ],
                 shortTitle: "Approach",

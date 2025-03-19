@@ -28,7 +28,16 @@ struct OptionsView: View {
         "bell.fill",
         "fork.knife",
         "exclamationmark.triangle.fill",
-        "figure.walk"
+        "figure.walk",
+        "house.fill",
+        "door.right.hand.closed",
+        "tshirt.fill",
+        "cloud.rain.fill",
+        "alarm.fill",
+        "number",
+        "button.roundedbottom.horizontal.fill"
+        
+        
     ]
     
     init(buttonID: String) {
@@ -46,10 +55,7 @@ struct OptionsView: View {
     var body: some View {
         NavigationStack {
             List {
-                Section(header: Text("Name")) {
-                    TextField("Enter button name", text: $buttonName, onCommit: saveButtonName)
-                }
-                
+                                
                 Section(header: Text("Icon")) {
                     Picker("Select Icon", selection: $iconName) {
                         ForEach(availableIcons, id: \.self) { icon in
@@ -61,6 +67,11 @@ struct OptionsView: View {
                         saveIconName()
                     }
                 }
+                
+                Section(header: Text("Name")) {
+                    TextField("Enter button name", text: $buttonName, onCommit: saveButtonName)
+                }
+
                 
                 Section(header: Text("Devices")) {
                     NavigationLink("Select lights", destination: SelectLightsView(button: buttonID))
